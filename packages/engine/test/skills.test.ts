@@ -153,7 +153,14 @@ const REPOSITORY = {
  * limiting us, with these headers.
  */
 function fakeGithub(
-  options: { redirect?: string; limited?: Record<string, string>; status?: number; archive?: Uint8Array } = {},
+  options: {
+    redirect?: string;
+    limited?: Record<string, string>;
+    status?: number;
+    archive?: Uint8Array;
+    /** The archive's declared length, so a size past the cap is tested without holding it. */
+    archiveLength?: number;
+  } = {},
 ) {
   const fetched: string[] = [];
   const fetch = async (url: string) => {
@@ -166,7 +173,8 @@ function fakeGithub(
       return new Response(null, { status: 302, headers: { location } });
     }
     if (/^https:\/\/codeload\.github\.com\/acme\/skills\/zip\/(refs\/heads\/main|0123abc)$/.test(url)) {
-      return new Response(options.archive ?? zip(REPOSITORY));
+      const headers = options.archiveLength ? { "content-length": String(options.archiveLength) } : undefined;
+      return new Response(options.archive ?? zip(REPOSITORY), { headers });
     }
     return new Response("404: Not Found", { status: 404 });
   };
@@ -520,11 +528,30 @@ describe("import", () => {
         url,
       ),
     ).rejects.toMatchObject({ code: "skill.too_large", params: { size: 16.1, max: 16 } });
-    const archive = new Uint8Array(50 * 1024 * 1024 + 1);
+    // Past the archive's cap it's refused as soon as GitHub says the size, before the body is held.
+    const declared = 1024 * 1024 * 1024 + 1;
     await expect(
-      importSkillFromUrl({ ...skillDeps(), fetch: fakeGithub({ archive }).fetch }, f.owner.id, f.org.id, url),
-    ).rejects.toMatchObject({ code: "skill.repo_too_large", params: { max: 50 } });
+      importSkillFromUrl(
+        { ...skillDeps(), fetch: fakeGithub({ archiveLength: declared }).fetch },
+        f.owner.id,
+        f.org.id,
+        url,
+      ),
+    ).rejects.toMatchObject({ code: "skill.repo_too_large", params: { max: 1024 } });
     expect(await listSkills(f.db, f.owner.id, f.org.id)).toEqual([]);
+  });
+
+  test("a skill in a repository whose archive is past 50 MB is read", async () => {
+    f = await setup();
+    const archive = zip({ ...REPOSITORY, "skills-main/assets/video.bin": new Uint8Array(60 * 1024 * 1024) });
+    const url = "https://github.com/acme/skills/tree/main/relatorio-semanal";
+    const skill = await importSkillFromUrl(
+      { ...skillDeps(), fetch: fakeGithub({ archive }).fetch },
+      f.owner.id,
+      f.org.id,
+      url,
+    );
+    expect(skill).toMatchObject({ name: "relatorio-semanal", source: "url", sourceUrl: url });
   });
 
   test("a repository archive past 65,535 files is refused, never read in part", async () => {

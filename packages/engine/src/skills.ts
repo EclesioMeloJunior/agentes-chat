@@ -778,15 +778,18 @@ export function parseGithubUrl(url: string) {
 
 type GithubTarget = ReturnType<typeof parseGithubUrl>;
 
-/** A repository's archive is downloaded whole: past this size a link into it can't be read. */
+/** A repository's archive is downloaded whole (ADR 0020): past this size, in MB, a link into it can't be read. */
+const ARCHIVE_MAX_MB = 1024;
+
 const ARCHIVE: GithubFetchOptions = {
-  maxBytes: 50 * 1024 * 1024,
-  tooLarge: "The repository is too large to download (max 50 MB). Upload the skill's folder as a .zip instead.",
+  maxBytes: ARCHIVE_MAX_MB * 1024 * 1024,
+  tooLarge: `The repository is too large to download (max ${ARCHIVE_MAX_MB} MB). Upload the skill's folder as a .zip instead.`,
   tooLargeCode: "skill.repo_too_large",
-  tooLargeParams: { max: 50 },
+  tooLargeParams: { max: ARCHIVE_MAX_MB },
   // github.com redirects to codeload.github.com, and first to the new name of a renamed repository.
   redirects: 3,
-  timeoutMs: 60_000,
+  // Room for the largest archive at about 14 Mbit/s.
+  timeoutMs: 10 * 60_000,
 };
 
 /** How deep below a link a SKILL.md is looked for, and how many skills one link may hold. */
