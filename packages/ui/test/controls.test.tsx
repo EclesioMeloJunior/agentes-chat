@@ -16,6 +16,7 @@ import {
   Radio,
   RadioCard,
   RadioGroup,
+  Segmented,
   Switch,
   TabPanel,
   Tabs,
@@ -331,12 +332,45 @@ describe("Tabs", () => {
 
 describe("PickerHeading", () => {
   test("a section's label over its description, with a real gap between them", async () => {
-    render(<PickerHeading label="Papéis" description="Quem tem o papel pode falar." />);
+    render(<PickerHeading label="Cargos" description="Quem tem o cargo pode falar." />);
     const head = document.querySelector(".ac-picker-head");
-    expect([...(head?.children ?? [])].map((c) => c.textContent)).toEqual(["Papéis", "Quem tem o papel pode falar."]);
+    expect([...(head?.children ?? [])].map((c) => c.textContent)).toEqual(["Cargos", "Quem tem o cargo pode falar."]);
     const css = await Bun.file(new URL("../src/styles/components.css", import.meta.url).pathname).text();
     const rule = (selector: string) => css.split(`\n${selector} {`)[1]?.split("}")[0] ?? "";
     expect(rule(".ac-picker-head")).toContain("flex-direction: column;");
     expect(rule(".ac-picker-head")).toContain("gap: var(--space-1);");
+  });
+});
+
+describe("Segmented", () => {
+  test("one option that can't be chosen fades alone, and the arrow keys pass over it", async () => {
+    const Pick = () => {
+      const [value, setValue] = useState("a");
+      return (
+        <Segmented
+          label="Para quem"
+          value={value}
+          onValueChange={setValue}
+          options={[
+            { value: "a", label: "Pessoal" },
+            { value: "b", label: "Equipe", disabled: true },
+            { value: "c", label: "Outro" },
+          ]}
+        />
+      );
+    };
+    render(<Pick />);
+    const group = body().getByRole("radiogroup", { name: "Para quem" });
+    const radio = (name: string) => within(group).getByRole("radio", { name }) as HTMLButtonElement;
+    expect(group.hasAttribute("aria-disabled")).toBe(false);
+    expect([radio("Pessoal").disabled, radio("Equipe").disabled, radio("Outro").disabled]).toEqual([
+      false,
+      true,
+      false,
+    ]);
+    await act(async () => fireEvent.keyDown(group, { key: "ArrowRight" }));
+    expect(radio("Outro").getAttribute("aria-checked")).toBe("true");
+    await act(async () => fireEvent.keyDown(group, { key: "ArrowLeft" }));
+    expect(radio("Pessoal").getAttribute("aria-checked")).toBe("true");
   });
 });

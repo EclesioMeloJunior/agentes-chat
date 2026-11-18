@@ -17,7 +17,7 @@ import {
   sql,
 } from "@agenteschat/db";
 import { getAgent } from "./agents";
-import type { AiStatusDeps } from "./ai-status";
+import { type AiStatusDeps, rightHandWorkAi } from "./ai-status";
 import { decidesAgentApprovals, MAX_OWN_ACTIONS, OWN_ACTION_NAME } from "./approval-rules";
 import { cancelRoutineAhead, type RoutineAheadView, routinesAhead } from "./approvals";
 import { audienceError, audienceSql, canTalkTo, speakerFor, speakerOf } from "./audience";
@@ -33,6 +33,7 @@ import {
   type ConnectorTriggerFilter,
   type ConnectorTriggerSource,
   checkConnectorTrigger,
+  connectorNotYours,
   isConnectorEvent,
   normalizeConnectorFilter,
   syncConnectorTrigger,
@@ -41,7 +42,7 @@ import { type ContextDeps, schedulesOf } from "./context/summaries";
 import { nextCronTime, zonedTimeForward } from "./cron";
 import { dashboardRights, viewerOf } from "./dashboards/access";
 import { isWidgetChangeRun, widgetFiring, widgetRunStarting } from "./dashboards/refresh-fire";
-import { widgetRoutineGone, widgetRoutineHeld } from "./dashboards/refresh-ledger";
+import { widgetChangeOf, widgetRoutineGone, widgetRoutineHeld } from "./dashboards/refresh-ledger";
 import { openDm } from "./dms";
 import { ConflictError, ForbiddenError, NotFoundError, ValidationError } from "./errors";
 import { publishListChanged, publishMessageCreated, publishRoutineRuns, publishUserEvent } from "./events";
@@ -61,6 +62,7 @@ import { resolveRoutinePaused } from "./notification-producers";
 import { can, getMembership, requirePermission } from "./organizations";
 import { PermanentJobError } from "./outbox";
 import { maySql } from "./permissions";
+import { isRightHand } from "./right-hand";
 import {
   type RoutineAccess,
   type RoutineBrief,
@@ -121,6 +123,7 @@ const {
   webhookEndpoints,
   dashboards,
   dashboardWidgets,
+  connectorConnections,
 } = schema;
 
 export type RoutineTarget =
@@ -310,9 +313,9 @@ export interface RoutineView {
   waitingFor: { machineId: string; machineName: string; since: string } | null;
   /**
    * Its run waits on its plan or budget (`usage_paused`): paused near the limit (ADR 0118) or stopped at it (`limit`).
-   * It picks up at `resetsAt` (null: not known yet). `extraOff`: a plan pause whose window is used up, on an agent whose switch keeps long work
-   * off paid extra usage, so Continuar agora is refused (`pauseContinuesPastPlan`); `extraUsedUp`: the same with the
-   * switch on but no extra usage left. Who may press it: `canManage`.
+   * It picks up at `resetsAt` (null: not known yet). `extraOff`: a plan pause whose window is used up, on an agent
+   * whose long work never uses paid extra usage (`paysExtraUsage`), so Continuar agora is refused
+   * (`pauseContinuesPastPlan`); `extraUsedUp`: the same with no extra usage left. Who may press it: `canManage`.
    */
   usagePause: {
     source: "plan" | "budget";
@@ -719,6 +722,8 @@ interface ViewerRights {
   publicPrompt: boolean;
   /** Withdraws what was approved ahead for its runs: who manages it, and who may approve the agent's actions. */
   cancelsAhead: boolean;
+  /** Reads the service of someone else's own connection, as Conectores lists it to them: who manages connectors. */
+  readsServices: boolean;
 }
 
 /**
@@ -739,6 +744,7 @@ async function viewerRights(
         .select({
           may: maySql(orgId, viewerId ?? "", "manage_routines"),
           approves: maySql(orgId, viewerId ?? "", "approve_actions"),
+          connectors: maySql(orgId, viewerId ?? "", "manage_connectors"),
         })
         .from(organizationMembers)
         .where(and(eq(organizationMembers.orgId, orgId), eq(organizationMembers.userId, viewerId ?? ""))),
@@ -783,6 +789,7 @@ async function viewerRights(
       reads: !viewerId || manages || (!!channelId && inChannel.has(channelId)),
       publicPrompt: !!channelId && publicChannels.has(channelId),
       cancelsAhead: manages || me?.approves === true,
+      readsServices: me?.connectors === true,
     });
   }
   return out;
@@ -805,7 +812,8 @@ function billedTo(
 /**
  * Routines as `viewerId` sees them (see `viewerRights`), with their state, last week's health and usage; a webhook
  * routine's address only for who manages it, and only with `hooks`. In a workspace closed to work (suspended, or
- * being deleted) none has a next run: its slots pass.
+ * being deleted) none has a next run: its slots pass. `model`: read by the model of a run `viewerId` is behind, which
+ * may say it where others read: someone else's own connection's service is not given to it.
  */
 async function views(
   db: Database,
@@ -813,6 +821,7 @@ async function views(
   viewerId: string | null,
   hooks?: RoutineHookConfig,
   now = new Date(),
+  model = false,
 ): Promise<RoutineView[]> {
   const first = rows[0];
   if (!first) return [];
@@ -924,6 +933,17 @@ async function views(
     week.set(w.routineId, [...(week.get(w.routineId) ?? []), entry]);
   }
   const usageOf = new Map(usageRows.map((u) => [u.routineId, u]));
+  const personalIds = [...new Set([...hookKeys.values()].flatMap((h) => h.source?.connectionId ?? []))];
+  const personalOf = new Map(
+    (
+      await lookup(personalIds, () =>
+        db
+          .select({ id: connectorConnections.id, owner: connectorConnections.ownerUserId })
+          .from(connectorConnections)
+          .where(and(eq(connectorConnections.orgId, orgId), inArray(connectorConnections.id, personalIds))),
+      )
+    ).flatMap((c) => (c.owner ? [[c.id, c.owner] as const] : [])),
+  );
   const hookUrls = new Map<string, string>();
   if (hooks) {
     for (const [routineId, hook] of hookKeys) {
@@ -942,11 +962,13 @@ async function views(
     const lastRuns = recent.get(r.id) ?? [];
     const runs = recentViews(lastRuns, details, right.reads);
     // Its runs in progress: queued or being started (held emails are left out above), or whose agent run
-    // still works or waits (also after handing off).
+    // still works or waits. A run that already handed off is not at work: its report is out and the turn
+    // left of it (its own record) says nothing new for the routine, so only a wait of it shows.
     const open = lastRuns.filter((run) => {
       if (run.status === "queued" || run.status === "starting") return true;
       if (run.status !== "started" && run.status !== "reported") return false;
       const agentRun = run.agentRunId ? details.agentRuns.get(run.agentRunId) : undefined;
+      if (run.status === "reported") return agentWaiting(agentRun) || usageWaiting(agentRun);
       return AGENT_ACTIVE.has(agentRun?.status ?? "");
     });
     const openAgents = open.flatMap((run) => {
@@ -1012,6 +1034,13 @@ async function views(
     };
     const used = usageOf.get(r.id);
     const hookKey = hookKeys.get(r.id);
+    const source = hookKey?.source;
+    // A person's own connection's (ADR 0099 addendum): what it gives (filter, inbox, the provider's refusal) is its
+    // person's alone, and its service only theirs and who manages connectors; anyone else reads a plain webhook's.
+    const personal = source ? personalOf.get(source.connectionId) : undefined;
+    const theirs = !personal || personal === viewerId;
+    const blank = source && !(personal ? theirs : right.reads);
+    const hidden = source && !theirs && (model || !right.readsServices);
     return {
       id: r.id,
       name: r.name,
@@ -1022,10 +1051,15 @@ async function views(
         r,
         watches.get(r.id),
         hookKey && {
-          url: hookUrls.get(r.id) ?? null,
+          url: hidden ? null : (hookUrls.get(r.id) ?? null),
           signed: hookKey.signed,
           methods: hookKey.methods,
-          source: hookKey.source,
+          // What its creator typed (filter, inbox) and the provider's refusal go, as its prompt does, to readers only.
+          source: hidden
+            ? null
+            : source && blank
+              ? { ...source, inboxId: undefined, filter: {}, lastError: null }
+              : source,
         },
       ),
       active: r.active,
@@ -1370,7 +1404,7 @@ export async function createRoutine(
   checkFrequency(trigger, input.target);
   if (!input.paused && startsRuns(trigger.triggerType, input.target)) await checkRoutineCap(db, orgId, agent.id);
   if (input.trigger.type === "email") await checkWatchable(db, orgId, agent.id, input.trigger.accountId, actorId);
-  if (input.trigger.type === "connector") await checkConnectorTrigger(db, orgId, agent.id, input.trigger);
+  if (input.trigger.type === "connector") await checkConnectorTrigger(db, orgId, agent.id, input.trigger, actorId);
   const hooks = input.trigger.type === "webhook" || input.trigger.type === "connector" ? hooksOf(deps) : null;
   const ownActions = ownActionsOf(input.ownActions ?? []);
   if (ownActions.length > 0) await requireActionApprover(db, actorId, orgId, agent.ownerUserId);
@@ -1444,7 +1478,22 @@ async function syncConnector(
   const hook = (await routineHookKeys(deps.db, [row.id])).get(row.id);
   if (!hook) return;
   const url = deps.hooks ? await liveHookUrl(deps.db, deps.hooks, hook) : null;
-  await syncConnectorTrigger(deps.db, deps.connectors, row, url, next);
+  // Registering is an action in the connection's account: never for a routine its person didn't make.
+  const registers = row.active && next && (await connectorRefusal(deps.db, row, next.connectionId)) === null;
+  await syncConnectorTrigger(deps.db, deps.connectors, { ...row, active: Boolean(registers) }, url, next);
+}
+
+/** Why `row`'s creator may not wait on the connection's events (`connectorNotYours`); null: they may. */
+async function connectorRefusal(
+  db: Database,
+  row: Pick<RoutineRow, "orgId" | "createdByUserId">,
+  connectionId: string,
+) {
+  const [connection] = await db
+    .select({ ownerUserId: schema.connectorConnections.ownerUserId })
+    .from(schema.connectorConnections)
+    .where(and(eq(schema.connectorConnections.id, connectionId), eq(schema.connectorConnections.orgId, row.orgId)));
+  return connection ? connectorNotYours(db, row.orgId, connection, row.createdByUserId) : null;
 }
 
 /** The addresses' config, which a webhook routine can't be made without (the server always passes it). */
@@ -1534,7 +1583,7 @@ export async function listOrgRoutines(
       ),
     )
     .orderBy(routines.createdAt);
-  return views(db, rows, options.viewerId ?? null);
+  return views(db, rows, options.viewerId ?? null, undefined, undefined, true);
 }
 
 async function loadRoutine(db: Database, orgId: string, id: string, options: { deleted?: boolean } = {}) {
@@ -1569,6 +1618,10 @@ export async function managedWebhookRoutine(db: Database, actorId: string, orgId
   if (routine.event !== WEBHOOK_EVENT) {
     throw new NotFoundError("This routine isn't started by a webhook", "routine.no_webhook");
   }
+  // A person's own connection's address fires that person's routine: theirs alone, as its trigger is (`views`).
+  const source = await connectorOf(db, routine.id);
+  const refusal = source && (await connectorRefusal(db, { orgId, createdByUserId: actorId }, source.connectionId));
+  if (refusal) throw refusal;
   return routine;
 }
 
@@ -1695,7 +1748,19 @@ export async function updateRoutine(
         ? hadConnector
         : null;
   if (connectorTrigger && (patch.trigger?.type === "connector" || set.agentId)) {
-    await checkConnectorTrigger(db, orgId, agentId, connectorTrigger);
+    await checkConnectorTrigger(db, orgId, agentId, connectorTrigger, current.createdByUserId);
+  }
+  // Only its person reads what such a trigger asks (`views`), so only they change it: anyone else would save it blank.
+  if (patch.trigger !== undefined) {
+    for (const c of [hadConnector, patch.trigger.type === "connector" ? connectorTrigger : null]) {
+      const refusal = c && (await connectorRefusal(db, { orgId, createdByUserId: actorId }, c.connectionId));
+      if (refusal) throw refusal;
+    }
+  }
+  // A routine waiting on a person's own connection stays off unless it is theirs (`syncConnector` won't register it).
+  if (patch.active === true && connectorTrigger) {
+    const refusal = await connectorRefusal(db, current, connectorTrigger.connectionId);
+    if (refusal) throw refusal;
   }
   const active = patch.active ?? current.active;
   if (patch.active !== undefined) set.active = active;
@@ -1897,6 +1962,10 @@ export async function setRoutineActive(
 ): Promise<RoutineView> {
   const current = await loadRoutine(deps.db, orgId, id);
   await requireRoutineManager(deps.db, actorId, orgId, current.agentId);
+  // A routine waiting on a person's own connection stays off unless it is theirs.
+  const waitsOn = active ? await connectorOf(deps.db, current.id) : null;
+  const refusal = waitsOn ? await connectorRefusal(deps.db, current, waitsOn.connectionId) : null;
+  if (refusal) throw refusal;
   const nextRunAt = active && current.triggerType === "schedule" ? nextRoutineTime(current, new Date()) : null;
   const [row] = await deps.db
     .update(routines)
@@ -1917,6 +1986,50 @@ export async function setRoutineActive(
   await publishListChanged(deps.pubsub, orgId, "routines");
   const [view] = await views(deps.db, row ? [row] : [], actorId, deps.hooks);
   return view as RoutineView;
+}
+
+/**
+ * A resume nobody clicked: a scheduled routine that paused itself as `failing` runs again from its next slot, its
+ * failure streak cleared and its pause notice done, with `actor` in the audit log. Only that pause: one for who made
+ * it, its agent or its audience is a person's to decide. False when it was not paused so.
+ */
+export async function resumeRoutineBySystem(
+  deps: { db: Database; pubsub?: PubSub },
+  orgId: string,
+  id: string,
+  actor: { type: "agent" | "system"; id: string | null },
+): Promise<boolean> {
+  const current = await loadRoutine(deps.db, orgId, id);
+  if (current.triggerType !== "schedule") return false;
+  const [row] = await deps.db
+    .update(routines)
+    .set({
+      active: true,
+      nextRunAt: nextRoutineTime(current, new Date()),
+      updatedAt: new Date(),
+      pausedReason: null,
+      failuresInRow: 0,
+    })
+    .where(
+      and(
+        eq(routines.id, id),
+        eq(routines.orgId, orgId),
+        eq(routines.active, false),
+        eq(routines.pausedReason, "failing"),
+      ),
+    )
+    .returning({ id: routines.id });
+  if (!row) return false;
+  await recordAudit(deps.db, {
+    orgId,
+    actor,
+    action: "routine.resumed",
+    target: { type: "routine", id },
+    details: { name: current.name, after: "failing" },
+  });
+  await resolveRoutinePaused(deps, orgId, id).catch(() => {});
+  await publishListChanged(deps.pubsub, orgId, "routines");
+  return true;
 }
 
 /**
@@ -1947,6 +2060,26 @@ export async function runRoutineNow(deps: RoutineDeps, actorId: string, orgId: s
   await requireRoutineManager(deps.db, actorId, orgId, routine.agentId);
   // A person is waiting on this one: told now, where a scheduled slot just passes.
   await assertCanWork(deps.db, orgId, routine.agentId);
+  // A try queued for later after a failure (`retryOutsideFailure`, the only scheduled run queued ahead of its time)
+  // gives way: the person's run is that try, now. Left queued, it would have this one skipped as "the previous one
+  // was still running".
+  const ahead = await deps.db
+    .select({ id: routineRuns.id })
+    .from(routineRuns)
+    .where(
+      and(
+        eq(routineRuns.routineId, routine.id),
+        eq(routineRuns.status, "queued"),
+        eq(routineRuns.trigger, "schedule"),
+        sql`${routineRuns.at} > now()`,
+      ),
+    );
+  for (const r of ahead)
+    await endRoutineRun(
+      deps,
+      { orgId, routineId: routine.id, routineRunId: r.id },
+      { status: "superseded", code: "superseded" },
+    );
   await queueRoutineRun(deps, routine, new Date(), "manual");
   await publishRoutineRuns(deps.pubsub, orgId, routine.id);
   const [view] = await views(deps.db, [routine], actorId, deps.hooks);
@@ -2215,11 +2348,17 @@ async function fireClaimedRun(deps: RoutineDeps, run: RunRow) {
   // A widget's refresh (ADR 0135 §4): its widget and board are still there, its creator still sees the board and its
   // agent has an AI.
   let widget: RoutineBrief["widget"];
+  // The right hand's: whose AI this firing thinks with (ADR 0137 §11), its creator's when it can, else the workspace's.
+  let aiUserId: string | null | undefined;
   if (target.type === "widget") {
-    const firing = await widgetFiring(deps, routine.orgId, target, creator, membership);
+    const asker = widgetChangeOf(run.event)?.byUserId;
+    const firing = await widgetFiring(deps, routine.orgId, target, creator, membership, asker);
     if ("skip" in firing) return skip(firing.skip);
     if ("pause" in firing) return paused(firing.pause);
     widget = firing.widget;
+    aiUserId = firing.aiUserId;
+  } else if (deps.ai && isRightHand(agent)) {
+    aiUserId = (await rightHandWorkAi({ ...deps.ai, db }, agent, [creator])).person;
   }
 
   // Where it reports: its channel or the conversation it was asked in, else the creator's DM with the agent.
@@ -2266,6 +2405,7 @@ async function fireClaimedRun(deps: RoutineDeps, run: RunRow) {
     trigger: run.trigger,
     dueAt: run.at.toISOString(),
     ...(widget ? { widget } : {}),
+    ...(aiUserId !== undefined ? { aiUserId } : {}),
   };
   // The widget shows it is being redone (its last data stays on screen).
   if (widget) await widgetRunStarting(deps, routine.orgId, widget.widgetId);
