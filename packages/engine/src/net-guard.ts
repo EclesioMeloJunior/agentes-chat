@@ -86,6 +86,7 @@ export async function assertPublicHttpsUrl(raw: string, resolve: ResolveHost = r
   } catch {
     throw new ValidationError("Invalid address", "url.invalid");
   }
+  if (privateOutbound) return url;
   if (url.protocol !== "https:") throw new ValidationError("Use an https:// address", "url.https_required");
   if (url.username || url.password)
     throw new ValidationError("The address can't have a user or password", "url.credentials");

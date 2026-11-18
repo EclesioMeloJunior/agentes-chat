@@ -19,6 +19,8 @@ services:
       POSTGRES_USER: agentes
       POSTGRES_PASSWORD: "${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}"
       POSTGRES_DB: agentes
+    ports:
+      - "127.0.0.1:5432:5432"
     volumes:
       # Postgres 18 images keep their data in /var/lib/postgresql/18/docker, under this mount.
       - pgdata:/var/lib/postgresql
