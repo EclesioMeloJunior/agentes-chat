@@ -292,7 +292,11 @@ const isAgentPart = (k: readonly unknown[], orgId: string, part: string) =>
 const READ_GAP_MS = 500;
 const pacers = new WeakMap<QueryClient, ReturnType<typeof pacer>>();
 
-function readList(qc: QueryClient, list: string, filters: InvalidateQueryFilters) {
+/**
+ * Reads `filters` again, paced per `list` (`READ_GAP_MS`): every event that reads the same list names it the same way
+ * (`${orgId}:working`), so a run's events on the conversation and on the workspace's topic read it once.
+ */
+export function readList(qc: QueryClient, list: string, filters: InvalidateQueryFilters) {
   const pace = pacers.get(qc) ?? pacer(READ_GAP_MS);
   pacers.set(qc, pace);
   pace(list, () => void qc.invalidateQueries(filters));
@@ -410,6 +414,8 @@ export function applyWorkspaceEvent(qc: QueryClient, orgId: string, event: { typ
   if (event.type === "agents.changed") {
     // Under `agents`: the former ones. The DMs name each agent as the server knows it.
     readList(qc, `${orgId}:agents`, { queryKey: keys.agents(orgId) });
+    // A new agent's face: the statuses' own poll waits minutes while the socket is open.
+    readList(qc, `${orgId}:status:agents`, { queryKey: keys.agentStatus(orgId) });
     readList(qc, `${orgId}:dms`, { queryKey: keys.dms(orgId) });
     readList(qc, `${orgId}:team`, { queryKey: keys.team(orgId) });
     readList(qc, `${orgId}:overview`, { queryKey: keys.overview(orgId) });
@@ -535,16 +541,17 @@ export function applyWorkspaceEvent(qc: QueryClient, orgId: string, event: { typ
     void qc.invalidateQueries({ queryKey: keys.limits(orgId) });
     return true;
   }
-  // Someone changed their availability or line, or an agent its line (ADR 0084): the lists follow.
+  // Someone changed their availability or line, or an agent its line (ADR 0084): the lists follow, paced as the
+  // others (a burst of these is one read at its start and one at its end).
   if (event.type === "member.status") {
-    void qc.invalidateQueries({ queryKey: keys.people(orgId) });
+    readList(qc, `${orgId}:status:people`, { queryKey: keys.people(orgId) });
     return true;
   }
-  // An agent's run started, parked, came back or ended: its face and line follow, and so does "Trabalhando agora"
+  // An agent's run started, parked, came back or ended: its face and line follow, and so does "Working now"
   // (work handed off in two agents' DM reaches no conversation's events).
   if (event.type === "agent.status") {
-    void qc.invalidateQueries({ queryKey: keys.agentStatus(orgId) });
-    void qc.invalidateQueries({ queryKey: keys.working(orgId) });
+    readList(qc, `${orgId}:status:agents`, { queryKey: keys.agentStatus(orgId) });
+    readList(qc, `${orgId}:working`, { queryKey: keys.working(orgId) });
     return true;
   }
   // A routine's run was queued, started or ended, or a routine was made, changed or deleted: Rotinas follows.

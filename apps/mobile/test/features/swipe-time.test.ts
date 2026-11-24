@@ -2,6 +2,7 @@ import { describe, expect, test } from "bun:test";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { giveWay, pullOf, rubberband, TIME_REVEAL, timeShown } from "../../src/features/chat/pull";
+import { chatScreenSource } from "./chat-screen-source";
 
 const src = (file: string) => readFileSync(join(import.meta.dir, "../../src", file), "utf8");
 
@@ -59,7 +60,7 @@ describe("a pull to the left shows the times", () => {
     // Someone else's has its time there too, and gives way, face and body together, only when too wide.
     expect(row).toMatch(/\{inBubble \|\| compact \? \(\s+<SwipeTime>/);
     expect(row).toContain("<View onLayout={inBubble ? giveWay.onArea : undefined}>");
-    expect(row).toContain("onLayout={giveWay.onBubble}");
+    expect(row).toContain("giveWay.onBubble(e);");
     expect(row).toContain(
       "<Animated.View style={[styles.body, { gap: rhythm.part }, inBubble && giveWay.style, compact && slide]}>",
     );
@@ -80,7 +81,7 @@ describe("a pull to the left shows the times", () => {
     // The times take no touch.
     expect(swipe).toContain('<Animated.View pointerEvents="none" style={[styles.time, shown]}>');
     // On where messages hold no time (bubbles, compact), over the whole list.
-    const chat = src("features/chat/ChatScreen.tsx");
+    const chat = chatScreenSource();
     expect(chat).toContain("const timePan = useSwipeTimePan(timePull, timesOnPull(rowLook.style), stillRows);");
     expect(chat).toContain("<SwipeTimeFrame pull={timePull} gesture={timePan}>");
     // One rubber band for both sideways pulls.

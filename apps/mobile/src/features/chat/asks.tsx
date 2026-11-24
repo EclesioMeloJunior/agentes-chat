@@ -48,6 +48,7 @@ import {
   Icon,
   type IconName,
   InfoHint,
+  MESSAGE_CARD_X,
   Text,
   useReducedMotion,
   useTheme,
@@ -58,7 +59,8 @@ import { useBubbleHead, useBubblePart } from "../shared/bubble-part";
 import { AgentFace } from "../shared/Face";
 import { useColors, useDirectory, useMeId, useNow, useOrgId } from "../shared/hooks";
 import { agentLook, fuseRemaining } from "../shared/logic";
-import { tapHaptic, useSurface } from "../shared/parts";
+import { ownsIn } from "../shared/owner";
+import { tapHaptic } from "../shared/parts";
 import {
   type AskKind,
   type AskStore,
@@ -73,8 +75,9 @@ import {
 } from "./ask-store";
 import { LineStop } from "./LiveRows";
 import { approvalIdOf, lineStops, markedParts, markName, parseInline, questionOf, workingEntries } from "./logic";
-import { useCardTop, useMessageCardCorners, useOwnTop } from "./look";
+import { useCardTop, useMessageCardCorners, useMessageCardFrame, useOwnTop } from "./look";
 import { Spans } from "./MessageSpans";
+import { useRowDirectory } from "./row-data";
 import { withOpacity } from "./turn";
 import { WaitMark } from "./WaitMark";
 
@@ -243,8 +246,11 @@ function HandoffProbe({
   const dir = useDirectory();
   const h = useBrowserHandoff(orgId, id).data ?? fallback;
   const expired = useExpired(h.expiresAt);
-  // The same rule as its card (`HandoffCard`): by ids, never by a name that may not have loaded.
-  const mine = meId !== null && handoffIsMine(h, meId, dir.agentById.get(h.agentId)?.ownerUserId, org);
+  // The same rule as its card (`HandoffCard`): by ids, never by a name that may not have loaded. One who holds the
+  // role that answers for it helps as its owner (ADR 0085, addendum of 2026-11-21).
+  const agent = dir.agentById.get(h.agentId);
+  const owner = ownsIn(dir.memberById, meId, agent) ? meId : agent?.ownerUserId;
+  const mine = meId !== null && handoffIsMine(h, meId, owner, org);
   const ask =
     h.status === "pending" && h.kind === "ask" && !expired && mine
       ? {
@@ -409,6 +415,7 @@ export const ASK_ICON: Record<AskKind, IconName> = {
   agent: "agent",
   team: "members",
   firstTask: "target",
+  code: "code",
 };
 
 /** How a request ended, where its decision was: the card keeps its box, its words and what it is about. */
@@ -486,8 +493,8 @@ export function AskCard({
   const ownTop = useCardTop(12);
   const { t } = useTranslation();
   const c = useColors();
-  const dir = useDirectory();
-  const surface = useSurface();
+  const dir = useRowDirectory();
+  const frame = useMessageCardFrame();
   // Under someone else's words in a conversation of bubbles: a bubble of that message (its fill, joined to it, no sky),
   // and, when the message is only this request, its name line at the top and its time at the end, as a bubble's.
   const part = useBubblePart();
@@ -559,7 +566,7 @@ export function AskCard({
   return (
     // A plain view the conversation measures (never flattened away), around the card.
     <View ref={slot} collapsable={false} style={ownTop}>
-      <Animated.View entering={entering} style={[styles.card, surface, cardCorners]}>
+      <Animated.View entering={entering} style={[styles.card, frame.style]}>
         {/* What the card holds when it mounts just shows (a row scrolled back into view, its answer already there);
             what comes later fades in. */}
         <LayoutAnimationConfig skipEntering>
@@ -569,7 +576,7 @@ export function AskCard({
             {headless ? null : (
               <View style={styles.head}>
                 <Icon name={ASK_ICON[kind]} size={13} color={c.muted} />
-                <Text variant="footnote" tone="muted" numberOfLines={1} style={[styles.medium, styles.grow]}>
+                <Text variant="cardKind" numberOfLines={1} style={styles.grow}>
                   {kindNote ? `${kindWords} · ${kindNote}` : kindWords}
                 </Text>
                 {waitsFor && waitsFor !== "you" && !ended ? (
@@ -580,7 +587,7 @@ export function AskCard({
               </View>
             )}
             {lead ? (
-              <Text variant={well ? "body" : "title"} tone="ink" style={well ? styles.lead : undefined}>
+              <Text variant={well ? "small" : "cardTitle"} tone="ink">
                 <Spans inline={parseInline(lead)} />
               </Text>
             ) : null}
@@ -684,19 +691,15 @@ export function AskNote({
 }) {
   const ownTop = useCardTop(12);
   const { t } = useTranslation();
-  const dir = useDirectory();
-  const surface = useSurface();
+  const dir = useRowDirectory();
+  const frame = useMessageCardFrame();
   const part = useBubblePart();
   const cardCorners = useMessageCardCorners();
   const entering = useEntrance(CARD_IN);
-  const heading = (
-    <Text variant="body" tone="ink" style={styles.semibold}>
-      {title}
-    </Text>
-  );
+  const heading = <Text variant="cardTitle">{title}</Text>;
   return (
     <View style={ownTop}>
-      <Animated.View entering={entering} style={[styles.card, surface, cardCorners]}>
+      <Animated.View entering={entering} style={[styles.card, frame.style]}>
         <View style={[styles.clip, cardCorners]}>
           {part ? null : (
             <Sky
@@ -1076,7 +1079,7 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     borderBottomLeftRadius: 6,
     overflow: "hidden",
-    paddingHorizontal: 16,
+    paddingHorizontal: MESSAGE_CARD_X,
     paddingVertical: 14,
     gap: 8,
   },
@@ -1087,14 +1090,16 @@ const styles = StyleSheet.create({
   sky: { position: "absolute", top: 0, left: 0, right: 0, height: 56, opacity: 0.5 },
   head: { flexDirection: "row", alignItems: "center", gap: 6, minHeight: 18 },
   semibold: { fontWeight: "600" },
-  medium: { fontWeight: "500" },
   grow: { flex: 1, minWidth: 0 },
   shrink: { flexShrink: 1 },
   // Who it waits for never takes the kind's room: at most half the line (long words left the kind none).
   waits: { flexShrink: 1, maxWidth: "50%" },
-  lead: { lineHeight: 22 },
-  // Edge to edge across the card (its 16-point sides), a hairline above.
-  edge: { marginHorizontal: -16, paddingHorizontal: 16, borderTopWidth: StyleSheet.hairlineWidth },
+  // Edge to edge across the card (its sides, `MESSAGE_CARD_X`), a hairline above.
+  edge: {
+    marginHorizontal: -MESSAGE_CARD_X,
+    paddingHorizontal: MESSAGE_CARD_X,
+    borderTopWidth: StyleSheet.hairlineWidth,
+  },
   // What will happen, drawn small: as tall as a preview gets, fading at its foot.
   preview: { maxHeight: 152, overflow: "hidden", paddingVertical: 10 },
   fade: { position: "absolute", left: 0, right: 0, bottom: 0, height: 40 },

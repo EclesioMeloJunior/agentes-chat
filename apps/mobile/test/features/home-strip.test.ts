@@ -148,7 +148,7 @@ describe("Conversas with the strip and one list", () => {
   });
 
   test("loading stands as the one section it will be; nothing yet invites the first conversation", () => {
-    const loading = home.slice(home.indexOf(") : list.loading ? ("), home.indexOf("<HomeWidgets"));
+    const loading = home.slice(home.indexOf("<SkeletonOver"), home.indexOf("<HomeWidgets"));
     expect(loading).toContain('title={t("mobile.chats.recent")}');
     expect(loading).toContain("<SkeletonList rows={6} />");
     expect(loading).not.toContain("count=");
@@ -167,7 +167,12 @@ describe("Conversas with the strip and one list", () => {
     expect([...HOME_SECTIONS]).toEqual(["widgets", "pinned", "recent", "otherChannels"]);
     expect(home).toContain("const { collapsed, toggle } = useCollapsedSections();");
     for (const key of ["widgets", "pinned", "recent", "otherChannels"])
-      expect({ key, toggles: home.includes(`onToggle={() => toggle("${key}")}`) }).toEqual({ key, toggles: true });
+      expect({
+        key,
+        toggles:
+          home.includes(`onToggle={() => toggle("${key}")}`) ||
+          home.includes(`useCallback(() => toggle("${key}"), [toggle])`),
+      }).toEqual({ key, toggles: true });
   });
 
   test("a face opens its conversation as its row does, and its long press is the row's own", () => {
@@ -187,7 +192,8 @@ describe("Conversas with the strip and one list", () => {
     expect(strip).toContain("<Count");
     expect(strip).toContain("paddingHorizontal: SCREEN_X");
     expect(strip).toContain("if (items.length === 0) return null;");
-    expect(strip).toContain("<ScrollView horizontal showsHorizontalScrollIndicator={false}");
+    // The kit's sideways strip: a fade at the edge where more pinned faces wait.
+    expect(strip).toContain("<SideScroll contentContainerStyle={styles.strip}>");
     expect(strip).not.toMatch(/entering=|withTiming|withSpring|snapToInterval/);
     // Only a pinned agent at work moves, within the home's budget, and none while the strip is closed.
     expect(home).toContain('const moves = !collapsed.includes("pinned") && facts.face === "run" && live < LIVE_ROWS;');

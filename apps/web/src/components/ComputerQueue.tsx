@@ -304,7 +304,7 @@ function QueueLists({
 }
 
 /**
- * "More computers, shorter line": the viewer's other online computers, each with its switch for their replies to start
+ * "Your computers": the viewer's other online computers, each with its switch for their replies to start
  * there while this one is full (`spill.own`). Nothing when they have none.
  */
 function SpillHere({ machineId }: { machineId: string }) {
@@ -333,7 +333,6 @@ function SpillHere({ machineId }: { machineId: string }) {
             <Switch
               aria-label={`${t("devices.spillOwn")}: ${d.name}`}
               checked={d.spill.own}
-              disabled={update.isPending}
               onCheckedChange={(own) => update.mutate({ id: d.id, spill: { own } })}
             />
           </li>

@@ -27,6 +27,7 @@ import {
 } from "../../src/features/chat/logic";
 import { appColors } from "../../src/ui/palette";
 import { typeScale } from "../../src/ui/type-scale";
+import { chatScreenSource } from "./chat-screen-source";
 
 const read = (rel: string) => Bun.file(new URL(`../../src/features/${rel}`, import.meta.url).pathname).text();
 
@@ -91,7 +92,7 @@ describe("the rows follow the same choice as the web", () => {
     const row = await read("chat/MessageRow.tsx");
     expect(row).toContain("const onRight = mine && mineOnRight(look.style);");
     expect(row).toContain("if (onRight) {");
-    const chat = await read("chat/ChatScreen.tsx");
+    const chat = chatScreenSource();
     expect(chat).toContain("<RowLookContext.Provider value={rowLook}>");
     expect(chat).toContain('Boolean(dm) || thread.data?.channelKind === "dm"');
   });
@@ -104,7 +105,7 @@ describe("the rows follow the same choice as the web", () => {
   });
 
   test("opening at the last read message goes to the line, once, with no glide", async () => {
-    const chat = await read("chat/ChatScreen.tsx");
+    const chat = chatScreenSource();
     expect(chat).toContain("firstUnreadId(list, openFrom.at, meId)");
     expect(chat).toContain("void openAtLine(key).then(() => {");
     // The "Novas" line itself, at the top of the room under the bar: sent to the list's top as it was, it landed
@@ -160,8 +161,13 @@ describe("the rows follow the same choice as the web", () => {
     expect(await read("chat/QuoteLine.tsx")).toContain(
       "look.faces ? WORDS_START[look.style] : rowBodyInset(look).left",
     );
-    expect(await read("chat/ConsultGroup.tsx")).toContain("const inset = rowBodyInset(useRowLook());");
-    expect(await read("chat/ChatScreen.tsx")).toContain("const quiet = quietInset(rowLook);");
+    // The agents' talk quoted on its own sits on the words' column, as a quote above a reply does; in bubbles, on the
+    // bubbles' own column and as wide as one (`plateInset`).
+    expect(await read("chat/MessageRow.tsx")).toContain(
+      "plateInset(look, aboveInset(look)), { marginTop: rhythm.turn }",
+    );
+    expect(await read("chat/look.ts")).toContain("return { paddingLeft: body.left, paddingRight: body.right };");
+    expect(chatScreenSource()).toContain("const quiet = quietInset(rowLook);");
     for (const file of [
       "chat/EventLine.tsx",
       "chat/issue-work.tsx",
@@ -192,11 +198,11 @@ describe("the rows follow the same choice as the web", () => {
     expect(page).toContain("save(dm ? { dmStyle: s } : { channelStyle: s })");
   });
 
-  test("a conversation opens at the newest message until the person picks the last read, as on the web", async () => {
-    expect(openAtOf(undefined)).toBe("latest");
-    expect(openAtOf({ openAt: "read" })).toBe("read");
+  test("a conversation opens at the last read message until the person picks the newest, as on the web", async () => {
+    expect(openAtOf(undefined)).toBe("read");
+    expect(openAtOf({ openAt: "latest" })).toBe("latest");
     expect(await read("me/ChatLookPage.tsx")).toContain("const openAt = openAtOf(prefs);");
-    expect(await read("chat/ChatScreen.tsx")).toContain("opensAtLastRead(org?.chatPrefs");
+    expect(chatScreenSource()).toContain("opensAtLastRead(org?.chatPrefs");
   });
 });
 
@@ -239,6 +245,12 @@ describe("Tamanho do texto on the phone", () => {
     expect(await read("chat/MessageRow.tsx")).toContain(
       "maxFontSizeMultiplier={nameSize ? CHAT_TEXT_MAX_SCALE : undefined}",
     );
+  });
+
+  test("a list item keeps its words in a bubble as wide as its words", async () => {
+    const words = await read("chat/MessageText.tsx");
+    expect(words).toContain("style={[line, styles.item, inked]}");
+    expect(words).toContain("item: { flexShrink: 1 },");
   });
 
   test("every conversation reads the step from its look, and Conversa saves it on the server with a preview", async () => {

@@ -16,6 +16,7 @@ import {
   proposeChange,
   proposeFromItem,
   receiptLine,
+  setAgentEditors,
   updateAgent,
 } from "../src";
 import { addMember, type Fixture, setup } from "./fixtures";
@@ -229,7 +230,7 @@ describe("what waits on a person", () => {
     await decideProposal(f.db, f.owner.id, f.org.id, first?.id ?? "", "accept", { finalText: "Texto novo." });
     await decideProposal(f.db, f.owner.id, f.org.id, second?.id ?? "", "accept");
     const [agent] = await f.db.select().from(schema.agents).where(eq(schema.agents.id, ada.id));
-    expect(agent?.instructions).toBe("Texto novo.\n\n## Learned\n- Segunda regra.");
+    expect(agent?.instructions).toBe("Texto novo.\n\n- Segunda regra.");
   });
 
   test("a swap of existing words can't be carried: it reads as stale once the text moved", async () => {
@@ -266,6 +267,8 @@ describe("what waits on a person", () => {
     f = await setup();
     const sam = await addMember(f.db, f.org.id, "admin", "sam");
     const ada = await teammate("ada");
+    // Its instructions wait on who looks after it (ADR 0085, addendum of 2026-11-24): the owner and a named editor.
+    await setAgentEditors(f.db, f.owner.id, f.org.id, ada.id, { userIds: [sam.id], roleIds: [] });
     const [row] = (await propose([ada.id], "Uma regra.")).proposals;
     const heard: { type: string }[] = [];
     f.pubsub.subscribe(userTopic(f.org.id, sam.id), (e) => heard.push(e as { type: string }));
