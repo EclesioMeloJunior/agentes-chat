@@ -271,6 +271,35 @@ test("Meta Ads insights: link clicks apart from every click, a period by days, a
   expect(v.calls.length).toBe(before);
 });
 
+test("Meta Ads: a system-user token is kept as it is; a user token is swapped for the 60-day one", async () => {
+  const v = fakeVendors({
+    "POST graph.facebook.com/v27.0/oauth/access_token": () =>
+      Response.json({ access_token: "meta-user-short", expires_in: 3600 }),
+    "GET graph.facebook.com/v27.0/oauth/access_token": () =>
+      Response.json({ access_token: "meta-user-long", expires_in: 60 * DAY }),
+  });
+  await world(v.http);
+  const { connection } = await connect(v.http, "meta-ads");
+  const swap = v.calls.find((c) => c.key === "GET graph.facebook.com/v27.0/oauth/access_token")?.url.searchParams;
+  expect(swap?.get("grant_type")).toBe("fb_exchange_token");
+  expect(swap?.get("client_id")).toBe("fake-meta-app");
+  expect(swap?.get("fb_exchange_token")).toBe("meta-user-short");
+  const days = ((connection.tokenExpiresAt?.getTime() ?? 0) - Date.now()) / 86_400_000;
+  expect(Math.round(days)).toBe(60);
+  // The account is read with the long token, never the short one.
+  const me = v.calls.find((c) => c.key === "GET graph.facebook.com/v27.0/me");
+  expect(me?.headers.get("authorization")).toBe("Bearer meta-user-long");
+  // Meta renews a user token only through a new sign-in: the sweep leaves it alone.
+  expect(await refreshNativeTokens(deps(v.http), new Date(Date.now() + 59 * DAY * 1000))).toBe(0);
+
+  // The system-user token of the default configuration has no end and makes no swap.
+  const plain = fakeVendors();
+  await f.close();
+  await world(plain.http);
+  expect((await connect(plain.http, "meta-ads")).connection.tokenExpiresAt).toBeNull();
+  expect(plain.calls.some((c) => c.key === "GET graph.facebook.com/v27.0/oauth/access_token")).toBe(false);
+});
+
 test("Meta's deauthorize callback drops that account's connections; an unsigned one is nobody", async () => {
   const v = fakeVendors();
   await world(v.http);

@@ -1,10 +1,21 @@
 import type { ConnectionSecret } from "../connections";
 import { graphAnswer, graphFetch } from "./meta";
-import { json, type NativeCall, NativeError, type NativeService, type NativeTool, pageSize, str } from "./types";
+import {
+  json,
+  type NativeApp,
+  type NativeCall,
+  NativeError,
+  type NativeService,
+  type NativeToken,
+  type NativeTool,
+  pageSize,
+  str,
+} from "./types";
 
 /**
  * Meta Ads (ADR 0170): the ad accounts a business shares with this server's Meta app through Facebook Login for
- * Business (a configuration, `CONNECTOR_META_ADS_CONFIG_ID`), whose system-user token doesn't expire. Nothing spends
+ * Business (a configuration, `CONNECTOR_META_ADS_CONFIG_ID`), whose system-user token doesn't expire; a configuration
+ * that gives a user token instead has it swapped for the 60-day one (`longLived`, ADR 0170 addendum). Nothing spends
  * without a person: campaigns, ad sets and ads are always created paused, `update` never touches status or budget,
  * and `activate` and `set_budget` ask every time.
  */
@@ -396,8 +407,28 @@ const tools: Record<string, NativeTool> = {
   },
 };
 
+/**
+ * A user token (a configuration whose token type is the person's own) lasts hours: swapped once for the 60-day one.
+ * A system-user token comes with no end and is kept as it is. Meta renews a user token only through a new sign-in,
+ * so when it ends the connection asks to be reconnected (code 190 in `graphAnswer`).
+ */
+async function longLived(token: NativeToken, app: NativeApp, http: typeof fetch): Promise<NativeToken> {
+  if (!token.expiresIn) return token;
+  const params = new URLSearchParams({
+    grant_type: "fb_exchange_token",
+    client_id: app.clientId,
+    client_secret: app.clientSecret,
+    fb_exchange_token: token.accessToken,
+  });
+  const res = await graphFetch(http, `${API}/oauth/access_token?${params}`, { method: "GET" }, "Meta", false);
+  const body = await graphAnswer<{ access_token?: string; expires_in?: number }>(res, "Meta", false);
+  if (!body.access_token) throw new NativeError("connector.failed", "Meta gave no token. Try connecting again.");
+  return { accessToken: body.access_token, ...(body.expires_in ? { expiresIn: body.expires_in } : {}) };
+}
+
 export const metaAds: NativeService = {
   tools,
+  exchange: longLived,
   async account(secret, http) {
     const me = await adsCall<{ id?: string; name?: string }>({ http, secret }, "GET", "/me", { fields: "id,name" });
     if (!me.id) throw new NativeError("connector.failed", "Meta didn't say which account signed in. Try again.");

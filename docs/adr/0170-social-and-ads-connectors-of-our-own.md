@@ -331,3 +331,19 @@ WhatsApp connect through Composio's own apps, in another change.
   moved to Enterprise by X, which `CONNECTOR_X_CALLS_PER_MONTH` doesn't change. The way out then is a workspace's own X
   app, sealed per workspace as the server's GitHub App is per server, which this ADR doesn't build.
 - One account per service per workspace until agencies ask for more.
+
+## Addendum (2026-11-27): a user token for Meta Ads before App Review
+
+A business integration system-user token gets only the permissions with advanced access. Before App Review,
+`ads_read`, `ads_management` and `business_management` are standard access ("ready for testing"), so the sign-in
+succeeds and Meta leaves those three out: every Marketing API call answers #200. Standard access does reach the data
+of people with a role on the app. A server that runs ads only for its own business can therefore point
+`CONNECTOR_META_ADS_CONFIG_ID` at a configuration whose token type is the user's own, signed in by an app admin.
+
+- **The swap.** That token lasts hours. `metaAds.exchange` (`longLived` in `native/meta-ads.ts`) swaps it once, right
+  after the code, for the 60-day one (`grant_type=fb_exchange_token`). A token that comes with no end, the
+  system-user one, is kept as it is, so the default configuration behaves as before.
+- **No renewal.** Meta renews a user token only through a new sign-in, so there is no `refresh`. When the token ends,
+  Meta answers 190 and the connection asks to be reconnected, as any refused token does.
+- **Not for other businesses.** Their ad accounts still need advanced access, App Review and the full access tier,
+  with the system-user configuration (the checklist's Meta Ads steps). The user token reaches what its person can.

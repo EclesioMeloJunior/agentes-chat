@@ -87,6 +87,10 @@ bot an admin. Free ([bots](https://core.telegram.org/bots)).
    sandbox ad account, which spends nothing
    ([authorization](https://developers.facebook.com/documentation/ads-commerce/marketing-api/get-started/authorization)).
 7. Variables: `CONNECTOR_META_ADS_APP_ID`, `CONNECTOR_META_ADS_APP_SECRET` and `CONNECTOR_META_ADS_CONFIG_ID`.
+8. Only your own business's ad accounts, before App Review: the system-user token gets no `ads_read` or
+   `ads_management` while they are "Ready for testing" (Meta answers #200). Make a second configuration whose token
+   type is the user access token, put its ID in `CONNECTOR_META_ADS_CONFIG_ID`, and connect as an app admin. The
+   token is swapped for a 60-day one; after that, Reconnect (ADR 0170, addendum of 2026-11-27).
 
 ## TikTok
 
