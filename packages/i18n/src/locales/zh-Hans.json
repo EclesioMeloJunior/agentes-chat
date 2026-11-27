@@ -5106,6 +5106,7 @@
         "draft": "保存草稿"
       },
       "vault_make_password": "创建密码",
+      "send_whatsapp": "发送 WhatsApp 消息",
       "pg_query": "查询 {{target}}",
       "request_approval": {
         "merge": "合并 {{target}}",
@@ -7987,6 +7988,14 @@
     "git_git_write": {
       "label": "推送分支（git push）",
       "description": "将提交推送到 agentes/{agent}/… 分支：绝不推送到默认分支，不强制推送，不推送标签。删除分支和推送到他人的分支需要先审批。"
+    },
+    "whatsapp_send": {
+      "label": "发送 WhatsApp 消息",
+      "description": "从工作区关联的手机（设置 › 连接器）向某个号码或该手机所在的群组发送 WhatsApp 消息和图片，每条都由一个人批准，除非该智能体从不询问。"
+    },
+    "whatsapp_read": {
+      "label": "读取 WhatsApp 群组",
+      "description": "列出工作区关联的手机所在的群组，并读取其中最近的发言，从不读取私聊。"
     },
     "github_git_read": {
       "label": "克隆仓库（git）",
@@ -13118,6 +13127,32 @@
       }
     }
   },
+  "whatsApp": {
+    "title": "WhatsApp",
+    "text": "关联一部手机的 WhatsApp 后，你允许的智能体可以用它的号码向个人或它的群组发送消息（每条都由一个人批准，除非该智能体从不询问），并读取它的群组里的发言。关联方式与 WhatsApp Web 相同，该号码适用 WhatsApp 的条款。",
+    "off": "还没有关联手机。",
+    "connect": "关联手机",
+    "starting": "正在向 WhatsApp 获取代码…",
+    "scanTitle": "用手机扫描此代码",
+    "scanSteps": "在手机上打开 WhatsApp，然后进入 设置 › 已关联的设备 › 关联新设备。",
+    "qrAlt": "用于关联 WhatsApp 的二维码",
+    "linked": "智能体用这个号码发送 WhatsApp 消息，并读取它的群组。",
+    "closed": "已关联但离线，会自动重新连接。",
+    "disconnect": "取消关联",
+    "failed": "WhatsApp 服务没有响应。",
+    "retry": "重试",
+    "state": {
+      "off": "未关联",
+      "starting": "正在启动",
+      "qr": "等待扫描",
+      "open": "已关联",
+      "closed": "正在重新连接"
+    },
+    "remove": {
+      "title": "取消关联 WhatsApp？",
+      "text": "此工作区将退出手机的已关联设备。在重新关联手机之前，智能体无法发送 WhatsApp 消息。"
+    }
+  },
   "githubApp": {
     "title": "GitHub 仓库",
     "text": "在安装了 agentes.chat 应用的地方，智能体以应用的身份提交 pull request、issue、评论和 commit，并附上智能体的名字和提出请求的人。",
@@ -17723,6 +17758,7 @@
         "organization": "工作区",
         "account": "一个 AI 账号",
         "github_app": "GitHub 应用",
+        "whatsapp": "WhatsApp 关联",
         "git": "一个仓库",
         "import": "一次导入",
         "webhook": "一个 Webhook",
@@ -19208,6 +19244,14 @@
     "vault_save": {
       "label": "保存到 Vault",
       "description": "保存或更新联系信息、登录信息的用户名或描述。"
+    },
+    "send_whatsapp": {
+      "label": "发送 WhatsApp 消息",
+      "description": "在一个人批准后，从工作区关联的 WhatsApp 号码向某个号码或群组发送文本或 Drive 中的图片。"
+    },
+    "read_whatsapp": {
+      "label": "读取 WhatsApp 群组",
+      "description": "列出关联手机的群组，并读取某个群组最近的发言，从不读取私聊。"
     },
     "vault_delete": {
       "label": "从 Vault 删除",

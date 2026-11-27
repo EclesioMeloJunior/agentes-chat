@@ -5692,6 +5692,7 @@
         "draft": "Zapisać wersję roboczą"
       },
       "vault_make_password": "Utwórz hasło",
+      "send_whatsapp": "Wyślij wiadomość WhatsApp",
       "pg_query": "Odpytaj {{target}}",
       "request_approval": {
         "merge": "Wykonaj merge {{target}}",
@@ -8852,6 +8853,14 @@
     "git_git_write": {
       "label": "Wypychanie gałęzi (git push)",
       "description": "Wypychanie commitów do gałęzi agentes/{agent}/…: nigdy do gałęzi domyślnej, bez force push, bez tagów. Usuwanie gałęzi i wypychanie do cudzej gałęzi najpierw wymaga zatwierdzenia."
+    },
+    "whatsapp_send": {
+      "label": "Wysyłanie wiadomości WhatsApp",
+      "description": "Wysyłanie wiadomości i obrazów WhatsApp z telefonu połączonego z przestrzenią roboczą (Ustawienia › Konektory), na numer lub do grupy, w której jest, każda zatwierdzona przez osobę, chyba że agent nigdy nie pyta."
+    },
+    "whatsapp_read": {
+      "label": "Czytanie grup WhatsApp",
+      "description": "Wyświetlanie grup, w których jest telefon połączony z przestrzenią roboczą, i czytanie, co ostatnio w nich napisano, nigdy jego prywatnych czatów."
     },
     "github_git_read": {
       "label": "Klonowanie repozytoriów (git)",
@@ -14642,6 +14651,32 @@
       }
     }
   },
+  "whatsApp": {
+    "title": "WhatsApp",
+    "text": "Połącz WhatsApp z telefonu, a agenci, którym pozwolisz, wysyłają wiadomości z jego numeru, do osób lub do jego grup, każdą zatwierdzoną przez osobę, chyba że agent nigdy nie pyta, i czytają, co piszą jego grupy. Łączy się tak jak WhatsApp Web, a do tego numeru stosuje się warunki WhatsApp.",
+    "off": "Nie połączono jeszcze żadnego telefonu.",
+    "connect": "Połącz telefon",
+    "starting": "Pobieranie kodu z WhatsApp…",
+    "scanTitle": "Zeskanuj ten kod telefonem",
+    "scanSteps": "Na telefonie otwórz WhatsApp, a potem Ustawienia › Połączone urządzenia › Połącz urządzenie.",
+    "qrAlt": "Kod QR do połączenia WhatsApp",
+    "linked": "Agenci wysyłają wiadomości WhatsApp z tego numeru i czytają jego grupy.",
+    "closed": "Połączony, ale offline. Połączy się ponownie sam.",
+    "disconnect": "Rozłącz",
+    "failed": "Usługa WhatsApp nie odpowiedziała.",
+    "retry": "Spróbuj ponownie",
+    "state": {
+      "off": "Niepołączony",
+      "starting": "Uruchamianie",
+      "qr": "Czeka na skan",
+      "open": "Połączony",
+      "closed": "Ponowne łączenie"
+    },
+    "remove": {
+      "title": "Rozłączyć WhatsApp?",
+      "text": "Ta przestrzeń robocza zniknie z połączonych urządzeń telefonu. Agenci nie mogą wysyłać wiadomości WhatsApp, dopóki telefon nie zostanie połączony ponownie."
+    }
+  },
   "githubApp": {
     "title": "Repozytoria GitHub",
     "text": "Tam, gdzie zainstalowano aplikację agentes.chat, agenci otwierają pull requesty, issues, komentarze i commity jako aplikacja, z nazwą agenta i osoby, która o to poprosiła.",
@@ -19482,6 +19517,7 @@
         "organization": "przestrzeń roboczą",
         "account": "konto AI",
         "github_app": "aplikację GitHub",
+        "whatsapp": "połączenie WhatsApp",
         "git": "repozytorium",
         "import": "import",
         "webhook": "webhook",
@@ -21052,6 +21088,14 @@
     "vault_save": {
       "label": "Zapisz w Vault",
       "description": "Zapisuje lub aktualizuje dane kontaktowe, nazwę użytkownika loginu lub opis."
+    },
+    "send_whatsapp": {
+      "label": "Wyślij wiadomość WhatsApp",
+      "description": "Wysyła tekst lub obraz z Drive z numeru WhatsApp połączonego z przestrzenią roboczą na numer lub do grupy, po zatwierdzeniu przez osobę."
+    },
+    "read_whatsapp": {
+      "label": "Czytanie grup WhatsApp",
+      "description": "Wyświetla grupy połączonego telefonu i czyta, co ostatnio napisano w jednej z nich, nigdy prywatnego czatu."
     },
     "vault_delete": {
       "label": "Usuń z Vault",

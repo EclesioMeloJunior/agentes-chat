@@ -9,6 +9,7 @@ import {
   createDiskBlobStore,
   createErrorReporter,
   createGiphyGifs,
+  createHttpWhatsApp,
   createImapConnectionTester,
   createImapMailConnector,
   createImapPoller,
@@ -337,9 +338,14 @@ async function boot(
         source,
       ]),
     ),
+    // WhatsApp for agents (ADR 0261): only with the `whatsapp` service's address; each workspace links its own phone.
+    whatsapp: config.WHATSAPP_URL
+      ? createHttpWhatsApp({ url: config.WHATSAPP_URL, apiKey: config.WHATSAPP_API_KEY })
+      : null,
   };
   log.info("platform file storage", { kind: defaults.platformBlobs.kind });
   log.info("transactional email", { sender: defaults.email.id });
+  log.info("whatsapp for agents", { whatsapp: defaults.whatsapp ? "on" : "off" });
   log.info("mail for agents", {
     composio: Boolean(defaults.mail?.composio),
     imap: Boolean(defaults.mail?.imap),

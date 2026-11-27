@@ -40,6 +40,7 @@ env:
   APP_IMAGE: ghcr.io/agentes-chat/agentes
   BACKUP_IMAGE: ghcr.io/agentes-chat/backup
   SPEECH_IMAGE: ghcr.io/agentes-chat/speech
+  WHATSAPP_IMAGE: ghcr.io/agentes-chat/whatsapp
 
 # A newer push supersedes a running check of the same branch or pull request (on main only the newest
 # commit's image matters); a release tag's run is never cancelled. A pull request's runs and a manual run
@@ -118,6 +119,7 @@ jobs:
               - ".dockerignore"
               - "docker-compose*.yml"
               - "deploy/backup/**"
+              - "deploy/whatsapp/**"
       # A group counts only when code changed, not just docs or READMEs. The image holds the server
       # and the web app.
       - name: What runs
@@ -256,6 +258,10 @@ jobs:
       - name: Speech server
         if: success() || failure()
         run: python3 -m unittest discover -s deploy/speech
+      # Its HTTP side with fake sessions (ADR 0261): the key, the routes' shapes, numbers, a send while unlinked.
+      - name: WhatsApp service
+        if: success() || failure()
+        run: bun test ./deploy/whatsapp/src
       # GitHub's log storage sometimes loses logs; keep the errors as an artifact and in the summary.
       - name: Keep errors
         if: always()
@@ -602,7 +608,8 @@ jobs:
   # ship on the same tags, so the standalone compose file needs no build context. The speech image has no
   # layer cache: its models (about 700 MB) would crowd the app's layers out of the repository's cache
   # quota. It is optional like its service: a build that fails (its models come from Hugging Face)
-  # publishes the app without it.
+  # publishes the app without it. The WhatsApp service's image (ADR 0261) ships on the same tags and is
+  # optional the same way: its packages come from npm.
   #
   # Each platform builds on its own native runner (Bun under QEMU emulation is slow and fragile) and
   # pushes by digest only; publish then stitches the digests into one tag per image.
@@ -678,15 +685,30 @@ jobs:
           provenance: mode=max
           sbom: true
           outputs: type=image,name=${{ env.SPEECH_IMAGE }},push-by-digest=true,name-canonical=true,push=true
+      - uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+        id: whatsapp
+        continue-on-error: true
+        timeout-minutes: 10
+        with:
+          context: deploy/whatsapp
+          platforms: ${{ matrix.platform }}
+          labels: ${{ steps.meta.outputs.labels }}
+          provenance: mode=max
+          sbom: true
+          outputs: type=image,name=${{ env.WHATSAPP_IMAGE }},push-by-digest=true,name-canonical=true,push=true
+          cache-from: type=gha,scope=whatsapp-${{ matrix.slug }}
+          cache-to: type=gha,scope=whatsapp-${{ matrix.slug }},mode=max
       - name: Export the digests
         env:
           DIGEST: ${{ steps.app.outputs.digest }}
           BACKUP_DIGEST: ${{ steps.backup.outputs.digest }}
           SPEECH_DIGEST: ${{ steps.speech.outputs.digest }}
+          WHATSAPP_DIGEST: ${{ steps.whatsapp.outputs.digest }}
         run: |
-          mkdir -p /tmp/digests/app /tmp/digests/backup /tmp/digests/speech
+          mkdir -p /tmp/digests/app /tmp/digests/backup /tmp/digests/speech /tmp/digests/whatsapp
           touch "/tmp/digests/app/${DIGEST#sha256:}" "/tmp/digests/backup/${BACKUP_DIGEST#sha256:}"
           if [[ -n $SPEECH_DIGEST ]]; then touch "/tmp/digests/speech/${SPEECH_DIGEST#sha256:}"; fi
+          if [[ -n $WHATSAPP_DIGEST ]]; then touch "/tmp/digests/whatsapp/${WHATSAPP_DIGEST#sha256:}"; fi
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: digests-${{ matrix.slug }}
@@ -730,24 +752,32 @@ jobs:
         env:
           META: ${{ steps.meta.outputs.json }}
         run: |
-          app=() backup=() speech=()
+          app=() backup=() speech=() whatsapp=()
           for tag in $(jq -r '.tags[]' <<<"$META"); do
             app+=(-t "$tag")
             backup+=(-t "$BACKUP_IMAGE:${tag##*:}")
             speech+=(-t "$SPEECH_IMAGE:${tag##*:}")
+            whatsapp+=(-t "$WHATSAPP_IMAGE:${tag##*:}")
           done
           shopt -s nullglob
-          apps=(app/*) speeches=(speech/*)
+          apps=(app/*) speeches=(speech/*) whatsapps=(whatsapp/*)
           for digest in "${apps[@]}"; do app+=("$APP_IMAGE@sha256:${digest#app/}"); done
           for digest in backup/*; do backup+=("$BACKUP_IMAGE@sha256:${digest#backup/}"); done
           for digest in "${speeches[@]}"; do speech+=("$SPEECH_IMAGE@sha256:${digest#speech/}"); done
+          for digest in "${whatsapps[@]}"; do whatsapp+=("$WHATSAPP_IMAGE@sha256:${digest#whatsapp/}"); done
           docker buildx imagetools create "${app[@]}"
           docker buildx imagetools create "${backup[@]}"
-          # Every platform's speech image or none: the tags stay on the last release that built them all.
+          # Every platform's image or none, for the speech and WhatsApp images: their tags stay on the last
+          # release that built them all.
           if ((${#speeches[@]} == ${#apps[@]})); then
             docker buildx imagetools create "${speech[@]}"
           else
             echo "::warning::The speech image didn't build on every platform; its tags stay where they were."
+          fi
+          if ((${#whatsapps[@]} == ${#apps[@]})); then
+            docker buildx imagetools create "${whatsapp[@]}"
+          else
+            echo "::warning::The WhatsApp image didn't build on every platform; its tags stay where they were."
           fi
           docker buildx imagetools inspect "$(jq -r '.tags[0]' <<<"$META")"
 

@@ -5317,6 +5317,7 @@
         "draft": "Een concept opslaan"
       },
       "vault_make_password": "Een wachtwoord maken",
+      "send_whatsapp": "WhatsApp-bericht sturen",
       "pg_query": "{{target}} bevragen",
       "request_approval": {
         "merge": "{{target}} mergen",
@@ -8308,6 +8309,14 @@
     "git_git_write": {
       "label": "Branches pushen (git push)",
       "description": "Commits pushen naar agentes/{agent}/…-branches: nooit naar de standaardbranch, geen force push, geen tags. Branches verwijderen en naar de branch van iemand anders pushen vragen eerst om goedkeuring."
+    },
+    "whatsapp_send": {
+      "label": "WhatsApp-berichten sturen",
+      "description": "WhatsApp-berichten en afbeeldingen sturen vanaf de gekoppelde telefoon van de workspace (Instellingen › Connectors), naar een nummer of naar een groep waarin die zit, elk goedgekeurd door een persoon, tenzij de agent nooit vraagt."
+    },
+    "whatsapp_read": {
+      "label": "WhatsApp-groepen lezen",
+      "description": "De groepen tonen waarin de gekoppelde telefoon van de workspace zit en lezen wat er onlangs gezegd is, nooit de privéchats."
     },
     "github_git_read": {
       "label": "Repositories klonen (git)",
@@ -13675,6 +13684,32 @@
       }
     }
   },
+  "whatsApp": {
+    "title": "WhatsApp",
+    "text": "Koppel de WhatsApp van een telefoon en de agents die je toestaat sturen berichten vanaf dat nummer, naar mensen of naar de groepen ervan, elk goedgekeurd door een persoon, tenzij de agent nooit vraagt, en lezen wat de groepen zeggen. Het koppelen gaat zoals bij WhatsApp Web, en de voorwaarden van WhatsApp gelden voor dat nummer.",
+    "off": "Nog geen telefoon gekoppeld.",
+    "connect": "Telefoon koppelen",
+    "starting": "Code ophalen bij WhatsApp…",
+    "scanTitle": "Scan deze code met de telefoon",
+    "scanSteps": "Open op de telefoon WhatsApp en dan Instellingen › Gekoppelde apparaten › Apparaat koppelen.",
+    "qrAlt": "QR-code om WhatsApp te koppelen",
+    "linked": "Agents sturen WhatsApp-berichten vanaf dit nummer en lezen de groepen ervan.",
+    "closed": "Gekoppeld maar offline. Het maakt zelf weer verbinding.",
+    "disconnect": "Ontkoppelen",
+    "failed": "De WhatsApp-dienst gaf geen antwoord.",
+    "retry": "Opnieuw proberen",
+    "state": {
+      "off": "Niet gekoppeld",
+      "starting": "Starten",
+      "qr": "Wacht op de scan",
+      "open": "Gekoppeld",
+      "closed": "Opnieuw verbinden"
+    },
+    "remove": {
+      "title": "WhatsApp ontkoppelen?",
+      "text": "Deze workspace verlaat de gekoppelde apparaten van de telefoon. Agents kunnen geen WhatsApp-berichten sturen tot er weer een telefoon gekoppeld is."
+    }
+  },
   "githubApp": {
     "title": "GitHub-repository's",
     "text": "Waar de agentes.chat-app is geïnstalleerd, openen agents pull requests, issues, opmerkingen en commits als de app, met de naam van de agent en van wie het vroeg.",
@@ -18358,6 +18393,7 @@
         "organization": "de werkruimte",
         "account": "een AI-account",
         "github_app": "de GitHub-app",
+        "whatsapp": "de WhatsApp-koppeling",
         "git": "een repository",
         "import": "een import",
         "webhook": "een webhook",
@@ -19871,6 +19907,14 @@
     "vault_save": {
       "label": "Opslaan in de Vault",
       "description": "Slaat contactgegevens, de gebruikersnaam van een login of een beschrijving op of werkt ze bij."
+    },
+    "send_whatsapp": {
+      "label": "WhatsApp-bericht sturen",
+      "description": "Stuurt een tekst, of een afbeelding uit de Drive, vanaf het gekoppelde WhatsApp-nummer van de workspace naar een nummer of een groep, nadat een persoon het goedkeurt."
+    },
+    "read_whatsapp": {
+      "label": "WhatsApp-groepen lezen",
+      "description": "Toont de groepen van de gekoppelde telefoon en leest wat een groep onlangs zei, nooit een privéchat."
     },
     "vault_delete": {
       "label": "Verwijderen uit de Vault",

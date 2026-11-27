@@ -13021,6 +13021,9 @@
   "approval.titles.vault_make_password": {
     "value": "Make a password"
   },
+  "approval.titles.send_whatsapp": {
+    "value": "Send a WhatsApp message"
+  },
   "approval.titles.pg_query": {
     "value": "Query {{target}}"
   },
@@ -20060,6 +20063,18 @@
   },
   "scopes.git_git_write.description": {
     "value": "Push commits to agentes/{agent}/… branches: never to the default branch, no force push, no tags. Pushing to someone else's branch asks for approval first."
+  },
+  "scopes.whatsapp_send.label": {
+    "value": "Send WhatsApp messages"
+  },
+  "scopes.whatsapp_send.description": {
+    "value": "Send WhatsApp messages and pictures from the workspace's linked phone (Settings › Connectors), to a number or to a group it is in, each approved by a person unless the agent never asks."
+  },
+  "scopes.whatsapp_read.label": {
+    "value": "Read WhatsApp groups"
+  },
+  "scopes.whatsapp_read.description": {
+    "value": "List the groups the workspace's linked phone is in and read what was said there lately, never its private chats."
   },
   "scopes.github_git_read.label": {
     "value": "Clone repositories (git)"
@@ -33237,6 +33252,66 @@
   "storage.connect.awsRegion.ap-southeast-7": {
     "value": "Asia Pacific (Thailand)"
   },
+  "whatsApp.title": {
+    "value": "WhatsApp"
+  },
+  "whatsApp.text": {
+    "value": "Link a phone's WhatsApp and the agents you allow can send messages from its number, to people or its groups, each one approved by a person unless the agent never asks, and read what its groups say. It links the way WhatsApp Web does, and WhatsApp's terms apply to that number."
+  },
+  "whatsApp.off": {
+    "value": "No phone linked yet."
+  },
+  "whatsApp.connect": {
+    "value": "Link a phone"
+  },
+  "whatsApp.starting": {
+    "value": "Getting a code from WhatsApp…"
+  },
+  "whatsApp.scanTitle": {
+    "value": "Scan this code with the phone"
+  },
+  "whatsApp.scanSteps": {
+    "value": "On the phone, open WhatsApp, then Settings › Linked devices › Link a device."
+  },
+  "whatsApp.qrAlt": {
+    "value": "QR code to link WhatsApp"
+  },
+  "whatsApp.linked": {
+    "value": "Agents send WhatsApp messages from this number and read its groups."
+  },
+  "whatsApp.closed": {
+    "value": "Linked but offline. It reconnects on its own."
+  },
+  "whatsApp.disconnect": {
+    "value": "Unlink"
+  },
+  "whatsApp.failed": {
+    "value": "The WhatsApp service didn't answer."
+  },
+  "whatsApp.retry": {
+    "value": "Try again"
+  },
+  "whatsApp.state.off": {
+    "value": "Not linked"
+  },
+  "whatsApp.state.starting": {
+    "value": "Starting"
+  },
+  "whatsApp.state.qr": {
+    "value": "Waiting for the scan"
+  },
+  "whatsApp.state.open": {
+    "value": "Linked"
+  },
+  "whatsApp.state.closed": {
+    "value": "Reconnecting"
+  },
+  "whatsApp.remove.title": {
+    "value": "Unlink WhatsApp?"
+  },
+  "whatsApp.remove.text": {
+    "value": "This workspace leaves the phone's linked devices. Agents can't send WhatsApp messages until a phone is linked again."
+  },
   "githubApp.title": {
     "value": "GitHub repositories"
   },
@@ -44940,6 +45015,9 @@
   "audit.change.area.github_app": {
     "value": "the GitHub app"
   },
+  "audit.change.area.whatsapp": {
+    "value": "the WhatsApp link"
+  },
   "audit.change.area.git": {
     "value": "a repository"
   },
@@ -48832,6 +48910,18 @@
   },
   "builtinTools.vault_save.description": {
     "value": "Saves or updates contact details, a login's username or a description."
+  },
+  "builtinTools.send_whatsapp.label": {
+    "value": "Send a WhatsApp message"
+  },
+  "builtinTools.send_whatsapp.description": {
+    "value": "Sends a text, or a picture from the Drive, from the workspace's linked WhatsApp number to a number or a group, after a person approves it."
+  },
+  "builtinTools.read_whatsapp.label": {
+    "value": "Read WhatsApp groups"
+  },
+  "builtinTools.read_whatsapp.description": {
+    "value": "Lists the linked phone's groups and reads what one said lately, never a private chat."
   },
   "builtinTools.vault_delete.label": {
     "value": "Delete from the Vault"

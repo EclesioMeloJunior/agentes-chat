@@ -5648,6 +5648,7 @@ export const ptBR = {
         draft: "Salvar um rascunho",
       },
       vault_make_password: "Criar uma senha",
+      send_whatsapp: "Enviar mensagem de WhatsApp",
       pg_query: "Consultar {{target}}",
       request_approval: {
         merge: "Fazer merge de {{target}}",
@@ -8803,6 +8804,16 @@ export const ptBR = {
       label: "Enviar branches (git push)",
       description:
         "Enviar commits para branches agentes/{agent}/…: nunca para o branch padrão, sem force push, sem tags. Enviar para o branch de outra pessoa pede aprovação antes.",
+    },
+    whatsapp_send: {
+      label: "Enviar mensagens de WhatsApp",
+      description:
+        "Enviar mensagens e fotos de WhatsApp do celular conectado ao workspace (Configurações › Conectores), para um número ou para um grupo em que ele está, cada uma aprovada por uma pessoa, a não ser que o agente nunca pergunte.",
+    },
+    whatsapp_read: {
+      label: "Ler grupos de WhatsApp",
+      description:
+        "Listar os grupos em que o celular conectado ao workspace está e ler o que foi dito neles recentemente, nunca as conversas privadas.",
     },
     github_git_read: {
       label: "Clonar repositórios (git)",
@@ -14210,6 +14221,33 @@ export const ptBR = {
       },
     },
   },
+  /** The workspace's WhatsApp number for agents (ADR 0261), in Settings  ›  Connectors (`WhatsAppPanel`). */
+  whatsApp: {
+    title: "WhatsApp",
+    text: "Conecte o WhatsApp de um celular e os agentes que você permitir enviam mensagens desse número, para pessoas ou para os grupos dele, cada uma aprovada por uma pessoa, a não ser que o agente nunca pergunte, e leem o que os grupos dizem. A conexão é como a do WhatsApp Web, e os termos do WhatsApp valem para esse número.",
+    off: "Nenhum celular conectado ainda.",
+    connect: "Conectar um celular",
+    starting: "Pegando um código com o WhatsApp…",
+    scanTitle: "Escaneie este código com o celular",
+    scanSteps: "No celular, abra o WhatsApp e vá em Configurações › Dispositivos conectados › Conectar dispositivo.",
+    qrAlt: "QR code para conectar o WhatsApp",
+    linked: "Os agentes enviam mensagens de WhatsApp deste número e leem os grupos dele.",
+    closed: "Conectado, mas offline. Ele se reconecta sozinho.",
+    disconnect: "Desconectar",
+    failed: "O serviço de WhatsApp não respondeu.",
+    retry: "Tentar de novo",
+    state: {
+      off: "Não conectado",
+      starting: "Iniciando",
+      qr: "Esperando o escaneamento",
+      open: "Conectado",
+      closed: "Reconectando",
+    },
+    remove: {
+      title: "Desconectar o WhatsApp?",
+      text: "Este espaço de trabalho sai dos dispositivos conectados do celular. Os agentes não enviam mensagens de WhatsApp até um celular ser conectado de novo.",
+    },
+  },
   githubApp: {
     title: "Repositórios do GitHub",
     text: "Onde o app agentes.chat está instalado, os agentes abrem pull requests, issues, comentários e commits como o app, com o nome do agente e de quem pediu.",
@@ -18809,6 +18847,7 @@ export const ptBR = {
         organization: "o workspace",
         account: "uma conta de IA",
         github_app: "o app do GitHub",
+        whatsapp: "a conexão do WhatsApp",
         git: "um repositório",
         import: "uma importação",
         webhook: "um webhook",
@@ -20444,6 +20483,16 @@ export const ptBR = {
     vault_save: {
       label: "Salvar no Cofre",
       description: "Salva ou atualiza um contato, o usuário de um login ou uma descrição.",
+    },
+    send_whatsapp: {
+      label: "Enviar mensagem de WhatsApp",
+      description:
+        "Envia um texto, ou uma foto do Drive, do número de WhatsApp conectado ao workspace para um número ou um grupo, depois que uma pessoa aprova.",
+    },
+    read_whatsapp: {
+      label: "Ler grupos de WhatsApp",
+      description:
+        "Lista os grupos do celular conectado e lê o que um deles disse recentemente, nunca uma conversa privada.",
     },
     vault_delete: {
       label: "Apagar do Cofre",

@@ -202,6 +202,19 @@ export const BUILTIN_SCOPES: Record<string, { label: string; description: string
     description:
       "Save and update contact details in the Vault, change a saved login's username or a description, make passwords for accounts it creates, and delete what it saved.",
   },
+  // WhatsApp for agents (ADR 0261): never in a default set nor in "all tools"; each message asks a person.
+  "whatsapp:send": {
+    label: "Send WhatsApp messages",
+    description:
+      "Send WhatsApp messages and pictures from the workspace's linked phone (Settings › Connectors), to a number or to a group it is in, each approved by a person unless the agent never asks.",
+    sensitive: true,
+  },
+  // Reading the linked phone's groups (ADR 0261 addendum of 2026-11-27): never private chats, never in "all tools".
+  "whatsapp:read": {
+    label: "Read WhatsApp groups",
+    description:
+      "List the groups the workspace's linked phone is in and read what was said there lately, never its private chats.",
+  },
 };
 
 /**
@@ -320,8 +333,17 @@ export function impliedByWrite(scope: string) {
   return m ? `${m[1]}:write` : null;
 }
 
-/** Scopes that "all tools" (`*`) doesn't cover: the agent's computer (commands, its browser, its desktop). */
-export const NOT_IN_ALL: ReadonlySet<string> = new Set(["sandbox:run", "browser:use", "desktop:use"]);
+/**
+ * Scopes that "all tools" (`*`) doesn't cover: the agent's computer (commands, its browser, its desktop) and the
+ * workspace's WhatsApp number, its messages and its groups (ADR 0261).
+ */
+export const NOT_IN_ALL: ReadonlySet<string> = new Set([
+  "sandbox:run",
+  "browser:use",
+  "desktop:use",
+  "whatsapp:send",
+  "whatsapp:read",
+]);
 
 export const isAllowed = (state: AccessState) => state === "granted" || state === "inherited";
 

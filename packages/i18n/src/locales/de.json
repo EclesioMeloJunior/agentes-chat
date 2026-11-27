@@ -5317,6 +5317,7 @@
         "draft": "Einen Entwurf speichern"
       },
       "vault_make_password": "Ein Passwort erstellen",
+      "send_whatsapp": "WhatsApp-Nachricht senden",
       "pg_query": "{{target}} abfragen",
       "request_approval": {
         "merge": "{{target}} mergen",
@@ -8270,6 +8271,14 @@
     "git_git_write": {
       "label": "Branches pushen (git push)",
       "description": "Commits auf Branches agentes/{agent}/… pushen: nie auf den Standard-Branch, kein Force-Push, keine Tags. Branches löschen und auf den Branch einer anderen Person pushen fragt zuerst nach Freigabe."
+    },
+    "whatsapp_send": {
+      "label": "WhatsApp-Nachrichten senden",
+      "description": "WhatsApp-Nachrichten und Bilder vom verknüpften Telefon des Workspaces senden (Einstellungen › Connectors), an eine Nummer oder an eine Gruppe, in der es ist, jede von einer Person freigegeben, außer der Agent fragt nie."
+    },
+    "whatsapp_read": {
+      "label": "WhatsApp-Gruppen lesen",
+      "description": "Die Gruppen auflisten, in denen das verknüpfte Telefon des Workspaces ist, und lesen, was dort zuletzt gesagt wurde, nie seine privaten Chats."
     },
     "github_git_read": {
       "label": "Repositorys klonen (git)",
@@ -13604,6 +13613,32 @@
       }
     }
   },
+  "whatsApp": {
+    "title": "WhatsApp",
+    "text": "Verknüpfe das WhatsApp eines Telefons, und die Agenten, die du zulässt, senden Nachrichten von seiner Nummer, an Personen oder seine Gruppen, jede von einer Person freigegeben, außer der Agent fragt nie, und lesen, was seine Gruppen sagen. Die Verknüpfung funktioniert wie bei WhatsApp Web, und für diese Nummer gelten die Bedingungen von WhatsApp.",
+    "off": "Noch kein Telefon verknüpft.",
+    "connect": "Telefon verknüpfen",
+    "starting": "Code von WhatsApp wird abgerufen…",
+    "scanTitle": "Scanne diesen Code mit dem Telefon",
+    "scanSteps": "Öffne auf dem Telefon WhatsApp, dann Einstellungen › Verknüpfte Geräte › Gerät hinzufügen.",
+    "qrAlt": "QR-Code zum Verknüpfen von WhatsApp",
+    "linked": "Agenten senden WhatsApp-Nachrichten von dieser Nummer und lesen ihre Gruppen.",
+    "closed": "Verknüpft, aber offline. Es verbindet sich von selbst wieder.",
+    "disconnect": "Verknüpfung aufheben",
+    "failed": "Der WhatsApp-Dienst hat nicht geantwortet.",
+    "retry": "Erneut versuchen",
+    "state": {
+      "off": "Nicht verknüpft",
+      "starting": "Startet",
+      "qr": "Wartet auf den Scan",
+      "open": "Verknüpft",
+      "closed": "Verbindet neu"
+    },
+    "remove": {
+      "title": "WhatsApp-Verknüpfung aufheben?",
+      "text": "Dieser Workspace verlässt die verknüpften Geräte des Telefons. Agenten können keine WhatsApp-Nachrichten senden, bis wieder ein Telefon verknüpft ist."
+    }
+  },
   "githubApp": {
     "title": "GitHub-Repositories",
     "text": "Wo die agentes.chat-App installiert ist, öffnen Agenten Pull Requests, Issues, Kommentare und Commits als die App, mit dem Namen des Agenten und der Person, die gefragt hat.",
@@ -18291,6 +18326,7 @@
         "organization": "Workspace",
         "account": "KI-Konto",
         "github_app": "GitHub-App",
+        "whatsapp": "die WhatsApp-Verknüpfung",
         "git": "Repository",
         "import": "Import",
         "webhook": "Webhook",
@@ -19797,6 +19833,14 @@
     "vault_save": {
       "label": "Im Vault speichern",
       "description": "Speichert oder aktualisiert Kontaktdaten, den Benutzernamen eines Logins oder eine Beschreibung."
+    },
+    "send_whatsapp": {
+      "label": "WhatsApp-Nachricht senden",
+      "description": "Sendet einen Text oder ein Bild aus dem Drive von der verknüpften WhatsApp-Nummer des Workspaces an eine Nummer oder eine Gruppe, nachdem eine Person zugestimmt hat."
+    },
+    "read_whatsapp": {
+      "label": "WhatsApp-Gruppen lesen",
+      "description": "Listet die Gruppen des verknüpften Telefons und liest, was eine zuletzt gesagt hat, nie einen privaten Chat."
     },
     "vault_delete": {
       "label": "Aus dem Vault löschen",

@@ -5486,6 +5486,7 @@
         "draft": "Enregistrer un brouillon"
       },
       "vault_make_password": "Créer un mot de passe",
+      "send_whatsapp": "Envoyer un message WhatsApp",
       "pg_query": "Interroger {{target}}",
       "request_approval": {
         "merge": "Faire le merge de {{target}}",
@@ -8562,6 +8563,14 @@
     "git_git_write": {
       "label": "Pousser des branches (git push)",
       "description": "Pousser des commits sur les branches agentes/{agent}/… : jamais sur la branche par défaut, pas de force push, pas de tags. Supprimer des branches et pousser sur la branche de quelqu'un d'autre demandent d'abord une approbation."
+    },
+    "whatsapp_send": {
+      "label": "Envoyer des messages WhatsApp",
+      "description": "Envoyer des messages et des images WhatsApp depuis le téléphone associé à l'espace de travail (Paramètres › Connecteurs), à un numéro ou à un groupe dont il fait partie, chacun approuvé par une personne, sauf si l'agent ne demande jamais."
+    },
+    "whatsapp_read": {
+      "label": "Lire les groupes WhatsApp",
+      "description": "Lister les groupes dont fait partie le téléphone associé à l'espace de travail et lire ce qui s'y est dit récemment, jamais ses discussions privées."
     },
     "github_git_read": {
       "label": "Cloner des dépôts (git)",
@@ -14114,6 +14123,32 @@
       }
     }
   },
+  "whatsApp": {
+    "title": "WhatsApp",
+    "text": "Associez le WhatsApp d'un téléphone et les agents que vous autorisez envoient des messages depuis son numéro, à des personnes ou à ses groupes, chacun approuvé par une personne, sauf si l'agent ne demande jamais, et lisent ce que disent ses groupes. L'association se fait comme pour WhatsApp Web, et les conditions de WhatsApp s'appliquent à ce numéro.",
+    "off": "Aucun téléphone associé pour l’instant.",
+    "connect": "Associer un téléphone",
+    "starting": "Demande d’un code à WhatsApp…",
+    "scanTitle": "Scannez ce code avec le téléphone",
+    "scanSteps": "Sur le téléphone, ouvrez WhatsApp, puis Paramètres › Appareils connectés › Connecter un appareil.",
+    "qrAlt": "Code QR pour associer WhatsApp",
+    "linked": "Les agents envoient des messages WhatsApp depuis ce numéro et lisent ses groupes.",
+    "closed": "Associé mais hors ligne. Il se reconnecte tout seul.",
+    "disconnect": "Dissocier",
+    "failed": "Le service WhatsApp n’a pas répondu.",
+    "retry": "Réessayer",
+    "state": {
+      "off": "Non associé",
+      "starting": "Démarrage",
+      "qr": "En attente du scan",
+      "open": "Associé",
+      "closed": "Reconnexion"
+    },
+    "remove": {
+      "title": "Dissocier WhatsApp ?",
+      "text": "Cet espace de travail quitte les appareils connectés du téléphone. Les agents ne peuvent plus envoyer de messages WhatsApp tant qu’aucun téléphone n’est associé à nouveau."
+    }
+  },
   "githubApp": {
     "title": "Dépôts GitHub",
     "text": "Là où l'app agentes.chat est installée, les agents ouvrent des pull requests, issues, commentaires et commits en tant que l'app, avec le nom de l'agent et de la personne qui a demandé.",
@@ -18877,6 +18912,7 @@
         "organization": "l'espace de travail",
         "account": "un compte IA",
         "github_app": "l'app GitHub",
+        "whatsapp": "l’association WhatsApp",
         "git": "un dépôt",
         "import": "une importation",
         "webhook": "un webhook",
@@ -20424,6 +20460,14 @@
     "vault_save": {
       "label": "Enregistrer dans le Vault",
       "description": "Enregistre ou met à jour des coordonnées, le nom d'utilisateur d'un identifiant ou une description."
+    },
+    "send_whatsapp": {
+      "label": "Envoyer un message WhatsApp",
+      "description": "Envoie un texte, ou une image du Drive, depuis le numéro WhatsApp associé à l'espace de travail vers un numéro ou un groupe, après l'approbation d'une personne."
+    },
+    "read_whatsapp": {
+      "label": "Lire les groupes WhatsApp",
+      "description": "Liste les groupes du téléphone associé et lit ce qu'un groupe a dit récemment, jamais une discussion privée."
     },
     "vault_delete": {
       "label": "Supprimer du Vault",

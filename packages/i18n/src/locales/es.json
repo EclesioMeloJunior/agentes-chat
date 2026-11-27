@@ -5480,6 +5480,7 @@
         "draft": "Guardar un borrador"
       },
       "vault_make_password": "Crear una contraseña",
+      "send_whatsapp": "Enviar un mensaje de WhatsApp",
       "pg_query": "Consultar {{target}}",
       "request_approval": {
         "merge": "Hacer merge de {{target}}",
@@ -8513,6 +8514,14 @@
     "git_git_write": {
       "label": "Hacer push de ramas (git push)",
       "description": "Hacer push de commits a ramas agentes/{agent}/…: nunca a la rama principal, sin force push, sin tags. Borrar ramas y hacer push a la rama de otra persona piden aprobación antes."
+    },
+    "whatsapp_send": {
+      "label": "Enviar mensajes de WhatsApp",
+      "description": "Enviar mensajes e imágenes de WhatsApp desde el teléfono vinculado al espacio de trabajo (Configuración › Conectores), a un número o a un grupo en el que está, cada uno aprobado por una persona, salvo que el agente nunca pregunte."
+    },
+    "whatsapp_read": {
+      "label": "Leer grupos de WhatsApp",
+      "description": "Listar los grupos en los que está el teléfono vinculado al espacio de trabajo y leer lo que se dijo en ellos últimamente, nunca sus chats privados."
     },
     "github_git_read": {
       "label": "Clonar repositorios (git)",
@@ -14040,6 +14049,32 @@
       }
     }
   },
+  "whatsApp": {
+    "title": "WhatsApp",
+    "text": "Vincula el WhatsApp de un teléfono y los agentes que permitas envían mensajes desde su número, a personas o a sus grupos, cada uno aprobado por una persona, salvo que el agente nunca pregunte, y leen lo que dicen sus grupos. Se vincula como WhatsApp Web, y los términos de WhatsApp se aplican a ese número.",
+    "off": "Todavía no hay ningún teléfono vinculado.",
+    "connect": "Vincular un teléfono",
+    "starting": "Pidiendo un código a WhatsApp…",
+    "scanTitle": "Escanea este código con el teléfono",
+    "scanSteps": "En el teléfono, abre WhatsApp y luego Ajustes › Dispositivos vinculados › Vincular un dispositivo.",
+    "qrAlt": "Código QR para vincular WhatsApp",
+    "linked": "Los agentes envían mensajes de WhatsApp desde este número y leen sus grupos.",
+    "closed": "Vinculado pero sin conexión. Se reconecta solo.",
+    "disconnect": "Desvincular",
+    "failed": "El servicio de WhatsApp no respondió.",
+    "retry": "Reintentar",
+    "state": {
+      "off": "Sin vincular",
+      "starting": "Iniciando",
+      "qr": "Esperando el escaneo",
+      "open": "Vinculado",
+      "closed": "Reconectando"
+    },
+    "remove": {
+      "title": "¿Desvincular WhatsApp?",
+      "text": "Este espacio de trabajo sale de los dispositivos vinculados del teléfono. Los agentes no pueden enviar mensajes de WhatsApp hasta que se vincule un teléfono de nuevo."
+    }
+  },
   "githubApp": {
     "title": "Repositorios de GitHub",
     "text": "Donde la app agentes.chat está instalada, los agentes abren pull requests, issues, comentarios y commits como la app, con el nombre del agente y de quien lo pidió.",
@@ -18803,6 +18838,7 @@
         "organization": "el espacio de trabajo",
         "account": "una cuenta de IA",
         "github_app": "la app de GitHub",
+        "whatsapp": "la vinculación de WhatsApp",
         "git": "un repositorio",
         "import": "una importación",
         "webhook": "un webhook",
@@ -20337,6 +20373,14 @@
     "vault_save": {
       "label": "Guardar en el Vault",
       "description": "Guarda o actualiza datos de contacto, el usuario de un inicio de sesión o una descripción."
+    },
+    "send_whatsapp": {
+      "label": "Enviar un mensaje de WhatsApp",
+      "description": "Envía un texto, o una imagen del Drive, desde el número de WhatsApp vinculado al espacio de trabajo a un número o a un grupo, después de que una persona lo apruebe."
+    },
+    "read_whatsapp": {
+      "label": "Leer grupos de WhatsApp",
+      "description": "Lista los grupos del teléfono vinculado y lee lo que uno dijo últimamente, nunca un chat privado."
     },
     "vault_delete": {
       "label": "Eliminar del Vault",

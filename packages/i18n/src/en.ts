@@ -5802,6 +5802,7 @@ export const en = {
         draft: "Save a draft",
       },
       vault_make_password: "Make a password",
+      send_whatsapp: "Send a WhatsApp message",
       pg_query: "Query {{target}}",
       request_approval: {
         merge: "Merge {{target}}",
@@ -8859,6 +8860,16 @@ export const en = {
       label: "Push branches (git push)",
       description:
         "Push commits to agentes/{agent}/… branches: never to the default branch, no force push, no tags. Pushing to someone else's branch asks for approval first.",
+    },
+    whatsapp_send: {
+      label: "Send WhatsApp messages",
+      description:
+        "Send WhatsApp messages and pictures from the workspace's linked phone (Settings › Connectors), to a number or to a group it is in, each approved by a person unless the agent never asks.",
+    },
+    whatsapp_read: {
+      label: "Read WhatsApp groups",
+      description:
+        "List the groups the workspace's linked phone is in and read what was said there lately, never its private chats.",
     },
     github_git_read: {
       label: "Clone repositories (git)",
@@ -14215,6 +14226,33 @@ export const en = {
       },
     },
   },
+  /** The workspace's WhatsApp number for agents (ADR 0261), in Settings  ›  Connectors (`WhatsAppPanel`). */
+  whatsApp: {
+    title: "WhatsApp",
+    text: "Link a phone's WhatsApp and the agents you allow can send messages from its number, to people or its groups, each one approved by a person unless the agent never asks, and read what its groups say. It links the way WhatsApp Web does, and WhatsApp's terms apply to that number.",
+    off: "No phone linked yet.",
+    connect: "Link a phone",
+    starting: "Getting a code from WhatsApp…",
+    scanTitle: "Scan this code with the phone",
+    scanSteps: "On the phone, open WhatsApp, then Settings › Linked devices › Link a device.",
+    qrAlt: "QR code to link WhatsApp",
+    linked: "Agents send WhatsApp messages from this number and read its groups.",
+    closed: "Linked but offline. It reconnects on its own.",
+    disconnect: "Unlink",
+    failed: "The WhatsApp service didn't answer.",
+    retry: "Try again",
+    state: {
+      off: "Not linked",
+      starting: "Starting",
+      qr: "Waiting for the scan",
+      open: "Linked",
+      closed: "Reconnecting",
+    },
+    remove: {
+      title: "Unlink WhatsApp?",
+      text: "This workspace leaves the phone's linked devices. Agents can't send WhatsApp messages until a phone is linked again.",
+    },
+  },
   githubApp: {
     title: "GitHub repositories",
     text: "Where the agentes.chat app is installed, agents open pull requests, issues, comments and commits as the app, with the agent's name and who asked.",
@@ -18993,6 +19031,7 @@ export const en = {
         organization: "the workspace",
         account: "an AI account",
         github_app: "the GitHub app",
+        whatsapp: "the WhatsApp link",
         git: "a repository",
         import: "an import",
         webhook: "a webhook",
@@ -20657,6 +20696,15 @@ export const en = {
     vault_save: {
       label: "Save to the Vault",
       description: "Saves or updates contact details, a login's username or a description.",
+    },
+    send_whatsapp: {
+      label: "Send a WhatsApp message",
+      description:
+        "Sends a text, or a picture from the Drive, from the workspace's linked WhatsApp number to a number or a group, after a person approves it.",
+    },
+    read_whatsapp: {
+      label: "Read WhatsApp groups",
+      description: "Lists the linked phone's groups and reads what one said lately, never a private chat.",
     },
     vault_delete: {
       label: "Delete from the Vault",

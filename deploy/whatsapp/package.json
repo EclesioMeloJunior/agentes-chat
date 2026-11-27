@@ -1,0 +1,19 @@
+{
+  "name": "@agenteschat/whatsapp-sidecar",
+  "private": true,
+  "type": "module",
+  "license": "AGPL-3.0-only",
+  "description": "WhatsApp for agentes.chat's agents (ADR 0261): an HTTP service over zapo-js, one session per workspace.",
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "start": "node src/main.ts"
+  },
+  "dependencies": {
+    "@zapo-js/store-sqlite": "1.3.0",
+    "better-sqlite3": "12.6.2",
+    "qrcode": "1.5.4",
+    "zapo-js": "1.12.2"
+  }
+}

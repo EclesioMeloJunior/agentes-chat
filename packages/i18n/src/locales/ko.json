@@ -5104,6 +5104,7 @@
         "draft": "초안 저장"
       },
       "vault_make_password": "비밀번호 만들기",
+      "send_whatsapp": "WhatsApp 메시지 보내기",
       "pg_query": "{{target}} 조회",
       "request_approval": {
         "merge": "{{target}} 병합",
@@ -7947,6 +7948,14 @@
     "git_git_write": {
       "label": "브랜치 푸시(git push)",
       "description": "agentes/{agent}/… 브랜치에 커밋을 푸시해요. 기본 브랜치에는 절대 푸시하지 않고, 강제 푸시와 태그도 없어요. 브랜치 삭제와 다른 사람의 브랜치에 푸시할 때는 먼저 승인을 요청해요."
+    },
+    "whatsapp_send": {
+      "label": "WhatsApp 메시지 보내기",
+      "description": "워크스페이스에 연결된 휴대폰(설정 › 커넥터)에서 번호나 그 휴대폰이 속한 그룹으로 WhatsApp 메시지와 이미지를 보냅니다. 에이전트가 절대 묻지 않도록 설정되지 않았다면 메시지마다 사람이 승인합니다."
+    },
+    "whatsapp_read": {
+      "label": "WhatsApp 그룹 읽기",
+      "description": "워크스페이스에 연결된 휴대폰이 속한 그룹을 나열하고 최근 그곳에서 오간 말을 읽습니다. 개인 채팅은 읽지 않습니다."
     },
     "github_git_read": {
       "label": "저장소 클론(git)",
@@ -13040,6 +13049,32 @@
       }
     }
   },
+  "whatsApp": {
+    "title": "WhatsApp",
+    "text": "휴대폰의 WhatsApp을 연결하면 허용한 에이전트가 그 번호로 사람이나 그룹에 메시지를 보내고(에이전트가 절대 묻지 않도록 설정되지 않았다면 메시지마다 사람이 승인) 그룹의 대화를 읽습니다. WhatsApp 웹과 같은 방식으로 연결되며, 그 번호에는 WhatsApp 약관이 적용됩니다.",
+    "off": "아직 연결된 휴대폰이 없습니다.",
+    "connect": "휴대폰 연결",
+    "starting": "WhatsApp에서 코드를 받는 중…",
+    "scanTitle": "휴대폰으로 이 코드를 스캔하세요",
+    "scanSteps": "휴대폰에서 WhatsApp을 열고 설정 › 연결된 기기 › 기기 연결으로 이동하세요.",
+    "qrAlt": "WhatsApp 연결용 QR 코드",
+    "linked": "에이전트가 이 번호로 WhatsApp 메시지를 보내고 그룹을 읽습니다.",
+    "closed": "연결됐지만 오프라인입니다. 자동으로 다시 연결됩니다.",
+    "disconnect": "연결 해제",
+    "failed": "WhatsApp 서비스가 응답하지 않았습니다.",
+    "retry": "다시 시도",
+    "state": {
+      "off": "연결 안 됨",
+      "starting": "시작 중",
+      "qr": "스캔 대기 중",
+      "open": "연결됨",
+      "closed": "다시 연결 중"
+    },
+    "remove": {
+      "title": "WhatsApp 연결을 해제할까요?",
+      "text": "이 워크스페이스가 휴대폰의 연결된 기기에서 빠집니다. 휴대폰을 다시 연결할 때까지 에이전트는 WhatsApp 메시지를 보낼 수 없습니다."
+    }
+  },
   "githubApp": {
     "title": "GitHub 저장소",
     "text": "agentes.chat 앱이 설치된 곳에서는 에이전트가 앱으로 풀 리퀘스트, 이슈, 댓글, 커밋을 올리고, 에이전트 이름과 요청한 사람이 함께 표시돼요.",
@@ -17647,6 +17682,7 @@
         "organization": "워크스페이스",
         "account": "AI 계정",
         "github_app": "GitHub 앱",
+        "whatsapp": "WhatsApp 연결",
         "git": "저장소",
         "import": "가져오기",
         "webhook": "웹훅",
@@ -19125,6 +19161,14 @@
     "vault_save": {
       "label": "Vault에 저장",
       "description": "연락처, 로그인의 사용자 이름, 설명을 저장하거나 업데이트해요."
+    },
+    "send_whatsapp": {
+      "label": "WhatsApp 메시지 보내기",
+      "description": "사람이 승인한 뒤 워크스페이스에 연결된 WhatsApp 번호에서 번호나 그룹으로 텍스트나 Drive의 이미지를 보냅니다."
+    },
+    "read_whatsapp": {
+      "label": "WhatsApp 그룹 읽기",
+      "description": "연결된 휴대폰의 그룹을 나열하고 한 그룹에서 최근 오간 말을 읽습니다. 개인 채팅은 읽지 않습니다."
     },
     "vault_delete": {
       "label": "Vault에서 삭제",

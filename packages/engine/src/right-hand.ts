@@ -61,7 +61,8 @@ export const RIGHT_HAND_ROUTING_ABOUT =
 
 /**
  * What it holds whatever its grant rows say (`loadScopeKeys` adds the rows on top: apps, mailboxes, databases, a
- * tool turned off): every built-in scope an agent can be given but a computer's, and the setup cards. A computer's
+ * tool turned off): every built-in scope an agent can be given but a computer's and WhatsApp's (ADR 0261, given by an
+ * admin like any agent's), and the setup cards. A computer's
  * (`sandbox:run`, `browser:use`, `desktop:use`) are rows like any agent's, given when it is made
  * (`RIGHT_HAND_COMPUTER_GRANTS`, ADR 0175), so an admin turns them off on its page. One row answers everyone, so what
  * is one person's stays in that person's own DM with it (`rightHandReader`): their Vault items, their mailbox, their

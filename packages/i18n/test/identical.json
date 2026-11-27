@@ -359,7 +359,8 @@
       "connectors.names.datadog_us5",
       "connectors.names.datadog_eu",
       "connectors.names.datadog_ap1",
-      "connectors.names.datadog_ap2"
+      "connectors.names.datadog_ap2",
+      "whatsApp.title"
     ],
     "es": [
       "surface.nudge.hours",
@@ -668,7 +669,8 @@
       "connectors.names.datadog_us5",
       "connectors.names.datadog_eu",
       "connectors.names.datadog_ap1",
-      "connectors.names.datadog_ap2"
+      "connectors.names.datadog_ap2",
+      "whatsApp.title"
     ],
     "fr": [
       "devices.threads",
@@ -1213,7 +1215,8 @@
       "connectors.names.datadog_ap1",
       "connectors.names.datadog_ap2",
       "machines.maintenance.short.host_maintenance",
-      "machines.maintenance.short.other"
+      "machines.maintenance.short.other",
+      "whatsApp.title"
     ],
     "de": [
       "devices.permission.names.automation",
@@ -1736,7 +1739,8 @@
       "skills.one.name",
       "skills.one.inChannel",
       "integrations.badge",
-      "integrations.name"
+      "integrations.name",
+      "whatsApp.title"
     ],
     "it": [
       "devices.threads",
@@ -2157,7 +2161,8 @@
       "connectors.names.datadog_us5",
       "connectors.names.datadog_eu",
       "connectors.names.datadog_ap1",
-      "connectors.names.datadog_ap2"
+      "connectors.names.datadog_ap2",
+      "whatsApp.title"
     ],
     "nl": [
       "devices.threads",
@@ -2859,7 +2864,8 @@
       "skills.page.colSkill",
       "skills.one.inChannel",
       "skills.page.inRepo",
-      "integrations.badge"
+      "integrations.badge",
+      "whatsApp.title"
     ],
     "ja": [
       "live.sheet.args.k",
@@ -3051,7 +3057,8 @@
       "connectors.names.datadog_us5",
       "connectors.names.datadog_eu",
       "connectors.names.datadog_ap1",
-      "connectors.names.datadog_ap2"
+      "connectors.names.datadog_ap2",
+      "whatsApp.title"
     ],
     "ko": [
       "live.sheet.args.k",
@@ -3236,7 +3243,8 @@
       "connectors.names.datadog_us5",
       "connectors.names.datadog_eu",
       "connectors.names.datadog_ap1",
-      "connectors.names.datadog_ap2"
+      "connectors.names.datadog_ap2",
+      "whatsApp.title"
     ],
     "zh-Hans": [
       "channel.tooLong.fileName",
@@ -3410,7 +3418,8 @@
       "connectors.names.datadog_us5",
       "connectors.names.datadog_eu",
       "connectors.names.datadog_ap1",
-      "connectors.names.datadog_ap2"
+      "connectors.names.datadog_ap2",
+      "whatsApp.title"
     ],
     "id": [
       "drive.folder",
@@ -3767,7 +3776,8 @@
       "connectors.names.datadog_us5",
       "connectors.names.datadog_eu",
       "connectors.names.datadog_ap1",
-      "connectors.names.datadog_ap2"
+      "connectors.names.datadog_ap2",
+      "whatsApp.title"
     ],
     "tr": [
       "live.canvas.inspector.model",
@@ -3998,7 +4008,8 @@
       "connectors.names.datadog_us5",
       "connectors.names.datadog_eu",
       "connectors.names.datadog_ap1",
-      "connectors.names.datadog_ap2"
+      "connectors.names.datadog_ap2",
+      "whatsApp.title"
     ],
     "pl": [
       "drive.folder",
@@ -4352,7 +4363,8 @@
       "connectors.names.datadog_us5",
       "connectors.names.datadog_eu",
       "connectors.names.datadog_ap1",
-      "connectors.names.datadog_ap2"
+      "connectors.names.datadog_ap2",
+      "whatsApp.title"
     ],
     "ru": [
       "live.canvas.sizes.short.s",
@@ -4541,7 +4553,8 @@
       "connectors.names.datadog_us5",
       "connectors.names.datadog_eu",
       "connectors.names.datadog_ap1",
-      "connectors.names.datadog_ap2"
+      "connectors.names.datadog_ap2",
+      "whatsApp.title"
     ]
   },
   "mobile-base": {

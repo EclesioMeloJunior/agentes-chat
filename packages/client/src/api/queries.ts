@@ -3325,6 +3325,38 @@ export const useMailProviders = (orgId: string, enabled = true) => {
 };
 
 /** The organization's mailboxes (no passwords), with the agents that use each. */
+/**
+ * The workspace's WhatsApp number (ADR 0261): read every 2 s while a QR waits to be scanned or the session starts, every
+ * 15 s while it reconnects, else only when asked.
+ */
+export const useWhatsApp = (orgId: string, enabled = true) => {
+  const api = useApi();
+  return useQuery({
+    queryKey: keys.whatsapp(orgId),
+    queryFn: () => api.whatsapp.status(orgId),
+    enabled,
+    refetchInterval: (query) => {
+      const state = query.state.data?.state;
+      return state === "qr" || state === "starting" ? 2_000 : state === "closed" ? 15_000 : false;
+    },
+  });
+};
+
+export function useWhatsAppActions(orgId: string) {
+  const api = useApi();
+  const qc = useQueryClient();
+  return {
+    connect: useMutation({
+      mutationFn: () => api.whatsapp.connect(orgId),
+      onSuccess: (status) => qc.setQueryData(keys.whatsapp(orgId), status),
+    }),
+    disconnect: useMutation({
+      mutationFn: () => api.whatsapp.disconnect(orgId),
+      onSuccess: () => qc.invalidateQueries({ queryKey: keys.whatsapp(orgId) }),
+    }),
+  };
+}
+
 export const useMailAccounts = (orgId: string, enabled = true, { others = false } = {}) => {
   const api = useApi();
   return useQuery({

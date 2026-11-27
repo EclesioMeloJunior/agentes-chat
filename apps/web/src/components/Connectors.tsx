@@ -86,6 +86,7 @@ import {
 } from "@/components/MailConnect";
 import { type OwnerTab, OwnerTabs, PersonalOf } from "@/components/OwnerScope";
 import { useOrg } from "@/components/org-context";
+import { WhatsAppPanel } from "@/components/WhatsAppPanel";
 import { useAgentsAccess } from "@/hooks/useAgentsAccess";
 import { useDirectory } from "@/hooks/useDirectory";
 import { useFocusHome } from "@/hooks/useFocusHome";
@@ -813,6 +814,8 @@ export function ConnectorsSection({
               }}
             />
           )}
+          {/* The workspace's WhatsApp number (ADR 0261): only where the server has the service. */}
+          {!loading && !personal && <WhatsAppPanel />}
           {admin && !personal && othersCount > 0 && (
             <OthersPersonal
               items={tabs.others}
