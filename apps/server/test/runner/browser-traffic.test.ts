@@ -100,7 +100,13 @@ test("one socket to the browser endpoint: each target attached as Chrome tells o
   );
   cdp.attach("worker-1", "worker");
   const network = { maxPostDataSize: 1, maxResourceBufferSize: 1, maxTotalBufferSize: 1 };
-  expect(cdp.sent.slice(1).map(({ method, params, sessionId }) => ({ method, params, sessionId }))).toEqual([
+  // The tab's passkey refusal is its own test's; here, what every session gets.
+  expect(
+    cdp.sent
+      .slice(1)
+      .filter((m) => !m.method.startsWith("WebAuthn."))
+      .map(({ method, params, sessionId }) => ({ method, params, sessionId })),
+  ).toEqual([
     // A tab alone gets `Page`: the session that answers its dialogs.
     { method: "Page.enable", params: {}, sessionId: "page-1" },
     { method: "Network.enable", params: network, sessionId: "page-1" },
@@ -112,7 +118,14 @@ test("one socket to the browser endpoint: each target attached as Chrome tells o
   ]);
   // It never resumes or pauses a target, and asks for nothing else.
   expect(new Set(cdp.sent.map((m) => m.method))).toEqual(
-    new Set(["Target.setDiscoverTargets", "Target.setAutoAttach", "Network.enable", "Page.enable"]),
+    new Set([
+      "Target.setDiscoverTargets",
+      "Target.setAutoAttach",
+      "Network.enable",
+      "WebAuthn.enable",
+      "WebAuthn.addVirtualAuthenticator",
+      "Page.enable",
+    ]),
   );
   // Auto-attach only under a target: at the browser's level it holds the release of a press that opens a window.
   expect(cdp.sent.every((m) => m.method !== "Target.setAutoAttach" || m.sessionId)).toBe(true);
@@ -589,4 +602,36 @@ test("a tab's dialogs are answered on this connection: leaving and an alert at o
   expect(c.dialogs.open()).toMatchObject({ kind: "prompt" });
   cdp.close();
   expect(c.dialogs.open()).toBeNull();
+});
+
+test("every tab refuses passkeys at once: a virtual authenticator that never consents, before anything else; frames and workers get none", () => {
+  const { cdp } = counter();
+  cdp.onopen?.();
+  const webAuthn = (sessionId: string) =>
+    cdp.sent
+      .filter((m) => m.sessionId === sessionId && m.method.startsWith("WebAuthn."))
+      .map(({ method, params }) => ({ method, params }));
+  cdp.attach("page-1");
+  expect(cdp.sent.find((m) => m.sessionId === "page-1")?.method).toBe("WebAuthn.enable");
+  expect(webAuthn("page-1")).toEqual([
+    { method: "WebAuthn.enable", params: { enableUI: false } },
+    {
+      method: "WebAuthn.addVirtualAuthenticator",
+      params: {
+        options: {
+          protocol: "ctap2",
+          ctap2Version: "ctap2_1",
+          transport: "internal",
+          hasResidentKey: true,
+          hasUserVerification: true,
+          isUserVerified: false,
+          isUserConsenting: false,
+        },
+      },
+    },
+  ]);
+  cdp.event("Target.attachedToTarget", { sessionId: "frame-1", targetInfo: { type: "iframe" } }, "page-1");
+  cdp.attach("worker-1", "service_worker");
+  expect(webAuthn("frame-1")).toEqual([]);
+  expect(webAuthn("worker-1")).toEqual([]);
 });

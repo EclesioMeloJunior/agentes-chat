@@ -463,7 +463,7 @@ const DIALOG_TOOL = "browser_dialog";
 
 /** After a browser that stopped answering: what the agent does, and doesn't, next. */
 const NOT_RESPONDING =
-  "Don't guess why and don't try again right away: tell the person the browser on that computer isn't responding, and that the agentes app's runner log there says why.";
+  "Don't guess why and don't try again right away: tell the person the browser on that computer isn't responding, and that the agentes.chat app's log there says why.";
 
 /** Why a secret can't be typed in the browser. */
 function secretMissingText(name: string, held: { site: string | null; gone?: boolean } | null) {
@@ -620,7 +620,7 @@ function tabsLine(t: BrowserTabs | undefined): string {
   for (const host of t.closed ?? []) counts.set(host, (counts.get(host) ?? 0) + 1);
   const closed = [...counts].map(([host, n]) => (n > 1 ? `${host} ×${n}` : host)).join(", ");
   return `\nTabs open: ${t.count}${list.length > 0 ? ` (${list.join("; ")})` : ""}.${
-    closed ? ` Closed to keep your tabs tidy: ${closed}, so the tab numbers from list changed.` : ""
+    closed ? ` Closed to keep your tabs tidy: ${closed}.` : ""
   }`;
 }
 
@@ -677,8 +677,6 @@ function trailOf(report: PlanReport) {
 
 /** A CSS selector rather than words (`#avatar`, `.dropzone input`, `input[type=file]`). */
 const CSS_SELECTOR = /^[\w-]*(?:[#.][\w-]+|\[[^\]]+\])/;
-/** A tab's id or label as agent-browser takes it (`t4`, `checkout`): never a flag. */
-const TAB_ID = /^[A-Za-z0-9][\w-]{0,63}$/;
 
 const targetPropOf = (w: BrowserWording) => ({ type: "string", description: w.target, maxLength: 500 }) as const;
 
@@ -1614,14 +1612,8 @@ export function createBrowserToolSource(deps: BrowserToolDeps): ToolSource & { r
           url: { type: "string", description: "For `open`: the address.", maxLength: 2048 },
           tab: {
             type: "string",
-            description: "For `switch` and `close`: the tab's id from `list` (`t4`).",
-            pattern: TAB_ID.source,
+            description: "For `switch` and `close`: the tab's id from `list` (`t2`), or its label.",
             maxLength: 64,
-          },
-          index: {
-            type: "integer",
-            description: "Older form of `tab`: the number in the tab's id (4 for `t4`).",
-            minimum: 1,
           },
         },
         required: ["action"],
@@ -1629,12 +1621,12 @@ export function createBrowserToolSource(deps: BrowserToolDeps): ToolSource & { r
       },
       async (input, ctx) => {
         const action = str(input.action);
-        // agent-browser takes a tab's own id (`t4`) or label, never its place in the list.
-        const named = str(input.tab).trim();
-        if (named && !TAB_ID.test(named)) {
-          return Promise.resolve({ content: "Give the tab's id from `list` (like `t4`).", isError: true });
+        // `agent-browser` takes a tab by id (`t2`), label or target id, never by position: it refuses a bare number.
+        // Its subcommand words are no tab either: a switch to `close` would close the tab the agent is on.
+        const tab = str(input.tab).trim() || null;
+        if (tab !== null && (!/^[A-Za-z0-9][\w-]*$/.test(tab) || /^(\d+|new|list|close)$/i.test(tab))) {
+          return { content: "Give the tab's id from `list`, like `t2`, not its position.", isError: true };
         }
-        const index = named || (typeof input.index === "number" ? `t${Math.max(1, Math.round(input.index))}` : null);
         let args: string[];
         if (action === "list") args = [];
         else if (action === "open") {
@@ -1646,10 +1638,9 @@ export function createBrowserToolSource(deps: BrowserToolDeps): ToolSource & { r
           if (refused) return refused;
           args = ["new", ...(url ? [url] : [])];
         } else if (action === "switch") {
-          if (index === null)
-            return Promise.resolve({ content: "Say which tab (`tab`, its id from `list`).", isError: true });
-          args = [index];
-        } else args = ["close", ...(index !== null ? [index] : [])];
+          if (tab === null) return { content: "Say which tab (`tab`: its id from `list`).", isError: true };
+          args = [tab];
+        } else args = ["close", ...(tab !== null ? [tab] : [])];
         return run(ctx, { command: "tab", args, timeoutSeconds: COMMAND_SECONDS }, (d) =>
           action === "list"
             ? dataText(d)

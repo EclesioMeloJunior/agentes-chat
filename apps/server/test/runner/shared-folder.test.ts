@@ -7,7 +7,7 @@ import { allowedFor, foldersFor } from "../../runner/access";
 import { lookFiles } from "../../runner/desktop-look";
 import type { RunCommand } from "../../runner/service";
 import {
-  addSharedBin,
+  applySharedBin,
   duGb,
   ensureSingleShared,
   ensureSystemShared,
@@ -184,19 +184,22 @@ test("the owner's fix: a moved-in folder gets setgid and the group's rwx, a 644 
   expect(mode("run.sh") & 0o070).toBe(0o070);
 });
 
-test("addSharedBin keeps Windows' own PATH key: Task Scheduler's Path, never a second PATH with the shared bin alone", () => {
-  const shared = path.join("agentes", "shared");
-  const bin = path.join(shared, "bin");
-  const windows: NodeJS.ProcessEnv = { Path: path.join("Users", "me", ".local", "bin") };
-  addSharedBin(windows, shared, "win32");
-  expect(windows.PATH).toBeUndefined();
-  expect(windows.Path).toBe([path.join("Users", "me", ".local", "bin"), bin].join(path.delimiter));
+test("applySharedBin preserves Windows Path casing instead of overwriting PATH with only shared/bin", () => {
+  // Folders without a drive letter: on the POSIX machine the test runs on, `path.delimiter` is the drive's colon.
+  const existing = ["/windows/system32", "/users/user/.local/bin"].join(path.delimiter);
+  const env: Record<string, string | undefined> = { Path: existing };
+  const shared = path.join("/users/user/agentes", "shared");
+  applySharedBin(env, shared, "win32");
 
-  const elsewhere: NodeJS.ProcessEnv = { PATH: "/usr/bin" };
-  addSharedBin(elsewhere, shared, "linux");
-  expect(elsewhere.PATH).toBe(["/usr/bin", bin].join(path.delimiter));
+  expect(env.PATH).toBeUndefined();
+  expect(env.Path).toBe(`${existing}${path.delimiter}${path.join(shared, "bin")}`);
 
-  const none: NodeJS.ProcessEnv = { Path: "C:\tools" };
-  addSharedBin(none, null, "win32");
-  expect(none).toEqual({ Path: "C:\tools" });
+  // Idempotent on second call.
+  applySharedBin(env, shared, "win32");
+  expect(env.Path).toBe(`${existing}${path.delimiter}${path.join(shared, "bin")}`);
+
+  // POSIX still uses PATH directly.
+  const posixEnv: Record<string, string | undefined> = { PATH: "/usr/bin" };
+  applySharedBin(posixEnv, "/srv/shared", "linux");
+  expect(posixEnv.PATH).toBe(`/usr/bin${path.delimiter}${path.join("/srv/shared", "bin")}`);
 });

@@ -83,19 +83,20 @@ export function withSharedBin(pathVar: string | undefined, shared: string | null
 }
 
 /**
- * `withSharedBin` on `env` in place, under the PATH key it already has. A copy of Windows' env keeps the name as the
- * parent wrote it (`Path` under Task Scheduler), so `env.PATH` there was undefined: the PATH became the shared `bin`
- * alone, and Claude Code, no longer found, went to cmd.exe by its bare name ("not recognized as ... operable program
- * or batch file").
+ * Adds the shared folder's `bin/` to `env`'s PATH in place. On Windows a plain copy of `process.env`
+ * (`{ ...process.env }`) carries `Path` instead of `PATH`, so reading `env.PATH` directly yields `undefined`
+ * and would overwrite `PATH` with only `shared/bin`. Look up the existing key case-insensitively and update it
+ * in place.
  */
-export function addSharedBin(
-  env: NodeJS.ProcessEnv,
+export function applySharedBin(
+  env: Record<string, string | undefined>,
   shared: string | null | undefined,
   platform: NodeJS.Platform = process.platform,
 ): void {
-  const key = (platform === "win32" && Object.keys(env).find((k) => k.toUpperCase() === "PATH")) || "PATH";
-  const next = withSharedBin(env[key], shared);
-  if (next) env[key] = next;
+  if (!shared) return;
+  const key = platform === "win32" ? (Object.keys(env).find((k) => k.toUpperCase() === "PATH") ?? "PATH") : "PATH";
+  const updated = withSharedBin(env[key], shared);
+  if (updated) env[key] = updated;
 }
 
 /** How often what agents brought into system mode's folder is handed to the group (`shareAgentFiles`). */
