@@ -72,3 +72,21 @@ test("the HTTP gateway: a group's path, the cursor in the query only when it is 
   await expect(wa.readGroup("org-1", "5511999999999@s.whatsapp.net")).rejects.toBeInstanceOf(WhatsAppError);
   expect(urls).toHaveLength(3);
 });
+
+test("a picture goes as base64 beside its caption, a text alone without it", async () => {
+  const bodies: unknown[] = [];
+  const wa = createHttpWhatsApp({
+    url: "http://whatsapp:8080",
+    fetch: (async (_url: string, init: RequestInit) => {
+      bodies.push(JSON.parse(String(init.body)));
+      return new Response(JSON.stringify({ id: "m1" }), { status: 200 });
+    }) as unknown as typeof fetch,
+  });
+  const bytes = new Uint8Array([0xff, 0xd8, 0xff, 0xe0]);
+  expect(await wa.send("org-1", G, "a casa", { bytes, contentType: "image/jpeg" })).toEqual({ id: "m1" });
+  await wa.send("org-1", "5511999999999", "oi");
+  expect(bodies).toEqual([
+    { to: G, text: "a casa", image: { data: "/9j/4A==", mimetype: "image/jpeg" } },
+    { to: "5511999999999", text: "oi" },
+  ]);
+});

@@ -304,7 +304,7 @@ export const BUILTIN_TOOL_INFO: Record<string, { label: string; description: str
   send_whatsapp: {
     label: "Send a WhatsApp message",
     description:
-      "Sends a text from the workspace's linked WhatsApp number to a number or a group, after a person approves it.",
+      "Sends a text, or a picture from the Drive, from the workspace's linked WhatsApp number to a number or a group, after a person approves it.",
   },
   read_whatsapp: {
     label: "Read WhatsApp groups",

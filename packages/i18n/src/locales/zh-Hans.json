@@ -7990,7 +7990,7 @@
     },
     "whatsapp_send": {
       "label": "发送 WhatsApp 消息",
-      "description": "从工作区关联的手机（设置 › 连接器）向某个号码或该手机所在的群组发送 WhatsApp 消息，每条都由一个人批准，除非该智能体从不询问。"
+      "description": "从工作区关联的手机（设置 › 连接器）向某个号码或该手机所在的群组发送 WhatsApp 消息和图片，每条都由一个人批准，除非该智能体从不询问。"
     },
     "whatsapp_read": {
       "label": "读取 WhatsApp 群组",
@@ -19245,7 +19245,7 @@
     },
     "send_whatsapp": {
       "label": "发送 WhatsApp 消息",
-      "description": "在一个人批准后，从工作区关联的 WhatsApp 号码向某个号码或群组发送文本。"
+      "description": "在一个人批准后，从工作区关联的 WhatsApp 号码向某个号码或群组发送文本或 Drive 中的图片。"
     },
     "read_whatsapp": {
       "label": "读取 WhatsApp 群组",

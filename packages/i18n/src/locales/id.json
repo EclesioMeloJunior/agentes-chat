@@ -7988,7 +7988,7 @@
     },
     "whatsapp_send": {
       "label": "Kirim pesan WhatsApp",
-      "description": "Kirim pesan WhatsApp dari ponsel yang ditautkan ke workspace (Pengaturan › Konektor), ke sebuah nomor atau ke grup yang diikutinya, masing-masing disetujui seseorang kecuali agen tidak pernah bertanya."
+      "description": "Kirim pesan dan gambar WhatsApp dari ponsel yang ditautkan ke workspace (Pengaturan › Konektor), ke sebuah nomor atau ke grup yang diikutinya, masing-masing disetujui seseorang kecuali agen tidak pernah bertanya."
     },
     "whatsapp_read": {
       "label": "Baca grup WhatsApp",
@@ -19230,7 +19230,7 @@
     },
     "send_whatsapp": {
       "label": "Kirim pesan WhatsApp",
-      "description": "Mengirim teks dari nomor WhatsApp yang ditautkan ke workspace ke sebuah nomor atau grup, setelah seseorang menyetujuinya."
+      "description": "Mengirim teks, atau gambar dari Drive, dari nomor WhatsApp yang ditautkan ke workspace ke sebuah nomor atau grup, setelah seseorang menyetujuinya."
     },
     "read_whatsapp": {
       "label": "Baca grup WhatsApp",

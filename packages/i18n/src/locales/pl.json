@@ -8855,7 +8855,7 @@
     },
     "whatsapp_send": {
       "label": "Wysyłanie wiadomości WhatsApp",
-      "description": "Wysyłanie wiadomości WhatsApp z telefonu połączonego z przestrzenią roboczą (Ustawienia › Konektory), na numer lub do grupy, w której jest, każda zatwierdzona przez osobę, chyba że agent nigdy nie pyta."
+      "description": "Wysyłanie wiadomości i obrazów WhatsApp z telefonu połączonego z przestrzenią roboczą (Ustawienia › Konektory), na numer lub do grupy, w której jest, każda zatwierdzona przez osobę, chyba że agent nigdy nie pyta."
     },
     "whatsapp_read": {
       "label": "Czytanie grup WhatsApp",
@@ -21089,7 +21089,7 @@
     },
     "send_whatsapp": {
       "label": "Wyślij wiadomość WhatsApp",
-      "description": "Wysyła tekst z numeru WhatsApp połączonego z przestrzenią roboczą na numer lub do grupy, po zatwierdzeniu przez osobę."
+      "description": "Wysyła tekst lub obraz z Drive z numeru WhatsApp połączonego z przestrzenią roboczą na numer lub do grupy, po zatwierdzeniu przez osobę."
     },
     "read_whatsapp": {
       "label": "Czytanie grup WhatsApp",

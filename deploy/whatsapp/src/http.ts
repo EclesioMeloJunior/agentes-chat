@@ -41,13 +41,19 @@ export interface Sessions {
    * `to`: the number's digits with the country code, or a group's address (`GROUP_ID`). Throws `NotConnectedError`
    * unless the session is open.
    */
-  send(id: string, to: string, text: string): Promise<{ id: string }>;
+  send(id: string, to: string, text: string, picture?: Picture): Promise<{ id: string }>;
   /** The groups the linked phone is in. Throws `NotConnectedError` unless the session is open. */
   groups(id: string): Promise<GroupView[]>;
   /** What a group said lately (`inbox.ts`). Throws `NotConnectedError` when the session was never started. */
   readGroup(id: string, group: string, after: string | null, limit: number): Promise<GroupRead>;
   /** Unlinks the device and forgets the session's keys. */
   logout(id: string): Promise<void>;
+}
+
+/** A picture to send, the words beside it as its caption (ADR 0260, pictures). */
+export interface Picture {
+  bytes: Uint8Array;
+  mimetype: "image/jpeg" | "image/png";
 }
 
 export class NotConnectedError extends Error {
@@ -67,7 +73,25 @@ export const GROUP_ID = /^[0-9]{5,30}(-[0-9]{5,15})?@g\.us$/;
 const CURSOR = /^[0-9a-f]{1,16}\.[0-9]{1,15}$/;
 /** WhatsApp takes 65,536 characters; a message an agent writes stays well under. */
 export const TEXT_MAX = 4096;
-const BODY_MAX = 64 * 1024;
+/** WhatsApp takes a picture up to 16 MB but recompresses anything big: 5 MB keeps a phone's photo whole. */
+export const PICTURE_MAX = 5 * 1024 * 1024;
+/** A picture's bytes travel as base64, a third larger, beside its words. */
+const BODY_MAX = 8 * 1024 * 1024;
+
+/** A send's `image`, `{ data: base64, mimetype }`, checked by its first bytes; null when it is not a JPEG or PNG. */
+export function pictureOf(raw: unknown): Picture | null {
+  if (!raw || typeof raw !== "object") return null;
+  const { data, mimetype } = raw as { data?: unknown; mimetype?: unknown };
+  if (typeof data !== "string" || (mimetype !== "image/jpeg" && mimetype !== "image/png")) return null;
+  if (data.length === 0 || data.length > Math.ceil(PICTURE_MAX / 3) * 4 || !/^[A-Za-z0-9+/]+={0,2}$/.test(data))
+    return null;
+  const bytes = new Uint8Array(Buffer.from(data, "base64"));
+  if (bytes.length === 0 || bytes.length > PICTURE_MAX) return null;
+  const jpeg = bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff;
+  const png = bytes[0] === 0x89 && bytes[1] === 0x50 && bytes[2] === 0x4e && bytes[3] === 0x47;
+  if (mimetype === "image/jpeg" ? !jpeg : !png) return null;
+  return { bytes, mimetype };
+}
 
 /** `+55 (11) 99999-9999` → `5511999999999`; null when what is left is not a number with its country code. */
 export function phoneDigits(raw: string): string | null {
@@ -134,13 +158,17 @@ export function createHandler(sessions: Sessions, apiKey: string) {
         } catch {
           return reply(res, 400, { error: "invalid_body" });
         }
-        const { to, text } = (body ?? {}) as { to?: unknown; text?: unknown };
+        const { to, text, image } = (body ?? {}) as { to?: unknown; text?: unknown; image?: unknown };
         const target = typeof to === "string" ? (GROUP_ID.test(to) ? to : phoneDigits(to)) : null;
         if (!target) return reply(res, 400, { error: "invalid_number" });
-        if (typeof text !== "string" || text.trim() === "" || text.length > TEXT_MAX)
+        const picture = image == null ? null : pictureOf(image);
+        if (image != null && !picture) return reply(res, 400, { error: "invalid_image" });
+        // A picture may go without a caption; a message alone needs words.
+        const words = text ?? "";
+        if (typeof words !== "string" || words.length > TEXT_MAX || (!picture && words.trim() === ""))
           return reply(res, 400, { error: "invalid_text" });
         try {
-          return reply(res, 200, await sessions.send(id, target, text));
+          return reply(res, 200, await sessions.send(id, target, words, picture ?? undefined));
         } catch (error) {
           if (error instanceof NotConnectedError) return reply(res, 409, { error: "not_connected" });
           throw error;

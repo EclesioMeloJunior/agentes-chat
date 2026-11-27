@@ -8807,7 +8807,7 @@ export const ptBR = {
     whatsapp_send: {
       label: "Enviar mensagens de WhatsApp",
       description:
-        "Enviar mensagens de WhatsApp do celular conectado ao workspace (Configurações › Conectores), para um número ou para um grupo em que ele está, cada uma aprovada por uma pessoa, a não ser que o agente nunca pergunte.",
+        "Enviar mensagens e fotos de WhatsApp do celular conectado ao workspace (Configurações › Conectores), para um número ou para um grupo em que ele está, cada uma aprovada por uma pessoa, a não ser que o agente nunca pergunte.",
     },
     whatsapp_read: {
       label: "Ler grupos de WhatsApp",
@@ -20485,7 +20485,7 @@ export const ptBR = {
     send_whatsapp: {
       label: "Enviar mensagem de WhatsApp",
       description:
-        "Envia um texto do número de WhatsApp conectado ao workspace para um número ou um grupo, depois que uma pessoa aprova.",
+        "Envia um texto, ou uma foto do Drive, do número de WhatsApp conectado ao workspace para um número ou um grupo, depois que uma pessoa aprova.",
     },
     read_whatsapp: {
       label: "Ler grupos de WhatsApp",

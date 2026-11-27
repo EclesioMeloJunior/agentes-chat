@@ -206,7 +206,7 @@ export const BUILTIN_SCOPES: Record<string, { label: string; description: string
   "whatsapp:send": {
     label: "Send WhatsApp messages",
     description:
-      "Send WhatsApp messages from the workspace's linked phone (Settings › Connectors), to a number or to a group it is in, each approved by a person unless the agent never asks.",
+      "Send WhatsApp messages and pictures from the workspace's linked phone (Settings › Connectors), to a number or to a group it is in, each approved by a person unless the agent never asks.",
     sensitive: true,
   },
   // Reading the linked phone's groups (ADR 0260 addendum of 2026-11-27): never private chats, never in "all tools".

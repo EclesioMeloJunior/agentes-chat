@@ -73,3 +73,20 @@ workspace chose to put its number there.
    this addendum for groups; reading private chats stays out.
 4. **The service's routes.** `GET /v1/sessions/{id}/groups` and `GET /v1/sessions/{id}/groups/{group}/messages?after`,
    both 409 while the phone is not linked; `POST …/messages` takes a group's address as `to`.
+
+## Addendum of 2026-11-27: pictures
+
+People asked agents to post a listing's photo with its description, which text alone couldn't do.
+
+1. **A picture from the Drive.** `send_whatsapp` takes `image`, a Drive file's id, with `text` as its caption (then
+   optional). The file is read as the run's agent, under the same check as any file it opens (`readPictureFile`), so
+   an agent sends only a picture it may read: one posted in its conversation, uploaded or saved to the Drive. Agents
+   never pass bytes or an address: a picture from the web is saved to the Drive first (`show_image`, `add_image`).
+2. **JPEG or PNG, up to 5 MB.** WhatsApp shows those as photos; a WebP is a sticker and a GIF a video, so both are
+   refused, and so is anything past 5 MB, which WhatsApp would recompress. The kind is read from the bytes, by the
+   engine and again by the service.
+3. **Checked before anyone is asked.** A file the agent can't read, that isn't a picture or is too large is refused
+   before the approval card; the card's title says it is a picture. The approved call reads the file again.
+4. **The service's route.** `POST …/messages` takes `image: { data: base64, mimetype }` (`invalid_image` when it is
+   not what it says), and its body may be up to 8 MB. The service sends it as zapo-js's `image` message, uploaded to
+   WhatsApp's media servers; the app waits up to 60 s for it.

@@ -1,21 +1,29 @@
 import { afterAll, beforeAll, describe, expect, test } from "bun:test";
 import { createServer, type Server } from "node:http";
 import type { AddressInfo } from "node:net";
-import { createHandler, NotConnectedError, phoneDigits, type Sessions, type SessionView } from "./http.ts";
+import {
+  createHandler,
+  NotConnectedError,
+  PICTURE_MAX,
+  type Picture,
+  phoneDigits,
+  type Sessions,
+  type SessionView,
+} from "./http.ts";
 
 const GROUP = "120363025246125486@g.us";
 const off: SessionView = { state: "off", qr: null, qrExpiresAt: null, account: null, reason: null };
 
 function fakeSessions() {
   const open = new Set<string>();
-  const sent: { id: string; to: string; text: string }[] = [];
+  const sent: { id: string; to: string; text: string; picture?: Picture }[] = [];
   const reads: { id: string; group: string; after: string | null }[] = [];
   const sessions: Sessions = {
     view: (id) => (open.has(id) ? { ...off, state: "open", account: { phone: "5511999999999" } } : off),
     start: async (id) => ({ ...off, state: id === "pair" ? "qr" : "starting", qr: id === "pair" ? "data:x" : null }),
-    send: async (id, to, text) => {
+    send: async (id, to, text, picture) => {
       if (!open.has(id)) throw new NotConnectedError();
-      sent.push({ id, to, text });
+      sent.push(picture ? { id, to, text, picture } : { id, to, text });
       return { id: `m${sent.length}` };
     },
     logout: async (id) => {
@@ -87,6 +95,39 @@ describe("whatsapp sidecar http", () => {
     expect((await post("Garimpei Casa")).status).toBe(400);
     expect((await post("120363025246125486@newsletter")).status).toBe(400);
     expect((await post("5511999999999@s.whatsapp.net")).status).toBe(400);
+  });
+
+  test("sends a JPEG or PNG picture, its words as an optional caption, and nothing that only claims to be one", async () => {
+    fake.open.add("org-5");
+    const post = (body: unknown) =>
+      call("/v1/sessions/org-5/messages", { method: "POST", body: JSON.stringify({ to: GROUP, ...(body as object) }) });
+    const png = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 1, 2, 3]);
+    const jpeg = new Uint8Array([0xff, 0xd8, 0xff, 0xe0, 1, 2, 3]);
+    const b64 = (bytes: Uint8Array) => Buffer.from(bytes).toString("base64");
+
+    expect((await post({ text: "a casa", image: { data: b64(png), mimetype: "image/png" } })).status).toBe(200);
+    expect(fake.sent.at(-1)).toEqual({
+      id: "org-5",
+      to: GROUP,
+      text: "a casa",
+      picture: { bytes: png, mimetype: "image/png" },
+    });
+    expect((await post({ image: { data: b64(jpeg), mimetype: "image/jpeg" } })).status).toBe(200);
+    expect(fake.sent.at(-1)).toMatchObject({ text: "", picture: { mimetype: "image/jpeg" } });
+
+    const refused = async (body: unknown) => (await (await post(body)).json()) as { error: string };
+    expect(await refused({ image: { data: b64(jpeg), mimetype: "image/png" } })).toEqual({ error: "invalid_image" });
+    expect(await refused({ image: { data: b64(new TextEncoder().encode("<svg/>")), mimetype: "image/png" } })).toEqual({
+      error: "invalid_image",
+    });
+    expect(await refused({ image: { data: "not base64!", mimetype: "image/jpeg" } })).toEqual({
+      error: "invalid_image",
+    });
+    expect(await refused({ image: { data: b64(png), mimetype: "image/gif" } })).toEqual({ error: "invalid_image" });
+    const big = new Uint8Array(PICTURE_MAX + 1);
+    big.set(jpeg);
+    expect((await post({ image: { data: b64(big), mimetype: "image/jpeg" } })).status).toBe(400);
+    expect((await post({ text: 5, image: { data: b64(png), mimetype: "image/png" } })).status).toBe(400);
   });
 
   test("lists the phone's groups and reads one, only while it is linked", async () => {

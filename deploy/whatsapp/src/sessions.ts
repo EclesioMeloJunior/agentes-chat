@@ -242,10 +242,13 @@ export async function createZapoSessions(dataDir: string): Promise<Sessions & { 
       return viewOf(entries.get(id));
     },
 
-    async send(id, to, text) {
+    async send(id, to, text, picture) {
       const e = entries.get(id);
       if (e?.state !== "open") throw new NotConnectedError();
-      const sent = await e.client.message.send(GROUP_ID.test(to) ? to : `${to}@s.whatsapp.net`, text);
+      const content = picture
+        ? { type: "image" as const, media: picture.bytes, mimetype: picture.mimetype, caption: text || undefined }
+        : text;
+      const sent = await e.client.message.send(GROUP_ID.test(to) ? to : `${to}@s.whatsapp.net`, content);
       return { id: sent.id };
     },
 

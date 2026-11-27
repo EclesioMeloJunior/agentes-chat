@@ -8225,7 +8225,7 @@
     },
     "whatsapp_send": {
       "label": "WhatsApp mesajı gönderme",
-      "description": "Çalışma alanına bağlı telefondan (Ayarlar › Bağlayıcılar) bir numaraya veya telefonun içinde olduğu bir gruba WhatsApp mesajı gönderme, ajan hiç sormayacak şekilde ayarlanmadıysa her biri bir kişinin onayıyla."
+      "description": "Çalışma alanına bağlı telefondan (Ayarlar › Bağlayıcılar) bir numaraya veya telefonun içinde olduğu bir gruba WhatsApp mesajı ve görseli gönderme, ajan hiç sormayacak şekilde ayarlanmadıysa her biri bir kişinin onayıyla."
     },
     "whatsapp_read": {
       "label": "WhatsApp gruplarını okuma",
@@ -19756,7 +19756,7 @@
     },
     "send_whatsapp": {
       "label": "WhatsApp mesajı gönder",
-      "description": "Bir kişi onayladıktan sonra çalışma alanına bağlı WhatsApp numarasından bir numaraya veya gruba metin gönderir."
+      "description": "Bir kişi onayladıktan sonra çalışma alanına bağlı WhatsApp numarasından bir numaraya veya gruba metin ya da Drive'dan bir görsel gönderir."
     },
     "read_whatsapp": {
       "label": "WhatsApp gruplarını okuma",

@@ -1,10 +1,12 @@
 import { afterEach, describe, expect, test } from "bun:test";
 import { createFakeWhatsApp, readSession } from "@agenteschat/adapters";
 import { eq, schema } from "@agenteschat/db";
+import { fakeImagePng } from "@agenteschat/providers/testing";
 import {
   ALL_TOOLS,
   BUILTIN_SCOPES,
   connectWhatsApp,
+  createFileArtifact,
   createToolGateway,
   createWhatsAppToolSource,
   DEFAULT_AGENT_SCOPES,
@@ -159,7 +161,10 @@ describe("send_whatsapp", () => {
 
     const [tool] = await createWhatsAppToolSource({ whatsapp: wa.gateway }).tools(ctx);
     const out = await tool?.execute({ to: "+55 11 98888-7777", text: "O pedido 123 saiu hoje." }, ctx);
-    expect(out).toMatchObject({ content: "Sent on WhatsApp to +5511988887777.", data: { to: "5511988887777" } });
+    expect(out).toMatchObject({
+      content: "Sent the message on WhatsApp to +5511988887777.",
+      data: { to: "5511988887777" },
+    });
     expect(wa.sent).toEqual([{ orgId: f.org.id, to: "5511988887777", text: "O pedido 123 saiu hoje." }]);
   });
 
@@ -204,7 +209,7 @@ describe("send_whatsapp to a group", () => {
     );
     const byName = await send.execute({ group: "garimpei casa", text: "Bom dia" }, ctx);
     expect(byName).toMatchObject({
-      content: 'Sent on WhatsApp to the group "🏠 Garimpei Casa 🏠".',
+      content: 'Sent the message on WhatsApp to the group "🏠 Garimpei Casa 🏠".',
       data: { group: CASA.id },
     });
     await send.execute({ group: OBRA.id, text: "Amanhã às 8" }, ctx);
@@ -284,5 +289,69 @@ describe("read_whatsapp", () => {
     const [, unlinked] = await createWhatsAppToolSource({ whatsapp: wa.gateway }).tools(ctx);
     const out = await unlinked?.execute({}, ctx);
     expect(out).toMatchObject({ isError: true, data: { error: "not_connected" } });
+  });
+});
+
+describe("send_whatsapp with a picture", () => {
+  const upload = (name: string, bytes: Uint8Array, channelId = f.general.id) =>
+    createFileArtifact(f.artifactDeps, { type: "person", userId: f.owner.id }, f.org.id, {
+      title: name,
+      name,
+      bytes,
+      channelId,
+    });
+
+  test("a Drive picture the agent reads goes with its caption; the card says it is a picture", async () => {
+    f = await setup();
+    const wa = createFakeWhatsApp();
+    wa.link(f.org.id);
+    wa.addGroup(f.org.id, CASA);
+    const ctx = await runIn(f);
+    const png = fakeImagePng("casa");
+    const file = await upload("casa.png", png);
+    const [send] = await createWhatsAppToolSource({ whatsapp: wa.gateway, artifacts: f.artifactDeps }).tools(ctx);
+    if (!send?.checkCall || !send.describe) throw new Error("no tool");
+
+    const input = { group: "Garimpei Casa", image: file.id, text: "Casa nova no garimpo" };
+    expect(await send.checkCall(input, ctx)).toEqual({ ok: true });
+    expect(send.describe(input).title).toBe('Send a WhatsApp picture to the group "Garimpei Casa"');
+    const out = await send.execute(input, ctx);
+    expect(out).toMatchObject({
+      content: 'Sent a picture on WhatsApp to the group "🏠 Garimpei Casa 🏠".',
+      data: { group: CASA.id, picture: true },
+    });
+    expect(wa.sent).toEqual([
+      { orgId: f.org.id, to: CASA.id, text: "Casa nova no garimpo", picture: { bytes: png, contentType: "image/png" } },
+    ]);
+
+    // A picture needs no words.
+    expect(await send.checkCall({ to: "+5511988887777", image: file.id }, ctx)).toEqual({ ok: true });
+    await send.execute({ to: "+5511988887777", image: file.id }, ctx);
+    expect(wa.sent.at(-1)).toMatchObject({ to: "5511988887777", text: "" });
+  });
+
+  test("refused before anyone is asked: not an id, a file it can't read, not a picture, and no Drive", async () => {
+    f = await setup();
+    const wa = createFakeWhatsApp();
+    wa.link(f.org.id);
+    const ctx = await runIn(f);
+    const [send] = await createWhatsAppToolSource({ whatsapp: wa.gateway, artifacts: f.artifactDeps }).tools(ctx);
+    if (!send?.checkCall) throw new Error("no tool");
+    const to = "+5511988887777";
+
+    expect(await send.checkCall({ to, image: "casa.png" }, ctx)).toMatchObject({ ok: false });
+    expect(await send.checkCall({ to, image: crypto.randomUUID() }, ctx)).toMatchObject({ ok: false });
+    const text = await upload("notas.txt", new TextEncoder().encode("não é foto"));
+    expect(await send.checkCall({ to, image: text.id }, ctx)).toMatchObject({ ok: false });
+    const gif = await upload("x.gif", new TextEncoder().encode("GIF89a\x01\x00\x01\x00\x00\x00\x00;"));
+    const gifCheck = await send.checkCall({ to, image: gif.id }, ctx);
+    expect(gifCheck).toMatchObject({ ok: false });
+
+    const [noDrive] = await createWhatsAppToolSource({ whatsapp: wa.gateway }).tools(ctx);
+    const png = await upload("casa.png", fakeImagePng("casa"));
+    expect(await noDrive?.checkCall?.({ to, image: png.id }, ctx)).toMatchObject({ ok: false });
+    const out = await noDrive?.execute({ to, image: png.id, text: "oi" }, ctx);
+    expect(out).toMatchObject({ isError: true });
+    expect(wa.sent).toEqual([]);
   });
 });

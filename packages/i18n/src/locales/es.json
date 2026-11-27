@@ -8516,7 +8516,7 @@
     },
     "whatsapp_send": {
       "label": "Enviar mensajes de WhatsApp",
-      "description": "Enviar mensajes de WhatsApp desde el teléfono vinculado al espacio de trabajo (Configuración › Conectores), a un número o a un grupo en el que está, cada uno aprobado por una persona, salvo que el agente nunca pregunte."
+      "description": "Enviar mensajes e imágenes de WhatsApp desde el teléfono vinculado al espacio de trabajo (Configuración › Conectores), a un número o a un grupo en el que está, cada uno aprobado por una persona, salvo que el agente nunca pregunte."
     },
     "whatsapp_read": {
       "label": "Leer grupos de WhatsApp",
@@ -20374,7 +20374,7 @@
     },
     "send_whatsapp": {
       "label": "Enviar un mensaje de WhatsApp",
-      "description": "Envía un texto desde el número de WhatsApp vinculado al espacio de trabajo a un número o a un grupo, después de que una persona lo apruebe."
+      "description": "Envía un texto, o una imagen del Drive, desde el número de WhatsApp vinculado al espacio de trabajo a un número o a un grupo, después de que una persona lo apruebe."
     },
     "read_whatsapp": {
       "label": "Leer grupos de WhatsApp",

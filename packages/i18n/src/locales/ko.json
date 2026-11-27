@@ -7950,7 +7950,7 @@
     },
     "whatsapp_send": {
       "label": "WhatsApp 메시지 보내기",
-      "description": "워크스페이스에 연결된 휴대폰(설정 › 커넥터)에서 번호나 그 휴대폰이 속한 그룹으로 WhatsApp 메시지를 보냅니다. 에이전트가 절대 묻지 않도록 설정되지 않았다면 메시지마다 사람이 승인합니다."
+      "description": "워크스페이스에 연결된 휴대폰(설정 › 커넥터)에서 번호나 그 휴대폰이 속한 그룹으로 WhatsApp 메시지와 이미지를 보냅니다. 에이전트가 절대 묻지 않도록 설정되지 않았다면 메시지마다 사람이 승인합니다."
     },
     "whatsapp_read": {
       "label": "WhatsApp 그룹 읽기",
@@ -19162,7 +19162,7 @@
     },
     "send_whatsapp": {
       "label": "WhatsApp 메시지 보내기",
-      "description": "사람이 승인한 뒤 워크스페이스에 연결된 WhatsApp 번호에서 번호나 그룹으로 텍스트를 보냅니다."
+      "description": "사람이 승인한 뒤 워크스페이스에 연결된 WhatsApp 번호에서 번호나 그룹으로 텍스트나 Drive의 이미지를 보냅니다."
     },
     "read_whatsapp": {
       "label": "WhatsApp 그룹 읽기",

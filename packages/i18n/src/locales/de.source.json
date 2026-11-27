@@ -20065,7 +20065,7 @@
     "value": "Send WhatsApp messages"
   },
   "scopes.whatsapp_send.description": {
-    "value": "Send WhatsApp messages from the workspace's linked phone (Settings › Connectors), to a number or to a group it is in, each approved by a person unless the agent never asks."
+    "value": "Send WhatsApp messages and pictures from the workspace's linked phone (Settings › Connectors), to a number or to a group it is in, each approved by a person unless the agent never asks."
   },
   "scopes.whatsapp_read.label": {
     "value": "Read WhatsApp groups"
@@ -48909,7 +48909,7 @@
     "value": "Send a WhatsApp message"
   },
   "builtinTools.send_whatsapp.description": {
-    "value": "Sends a text from the workspace's linked WhatsApp number to a number or a group, after a person approves it."
+    "value": "Sends a text, or a picture from the Drive, from the workspace's linked WhatsApp number to a number or a group, after a person approves it."
   },
   "builtinTools.read_whatsapp.label": {
     "value": "Read WhatsApp groups"

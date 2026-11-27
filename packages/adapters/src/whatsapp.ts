@@ -46,12 +46,20 @@ export interface WhatsAppGroupRead {
   since: string;
 }
 
+/** A picture to send (ADR 0260, pictures): the service takes a JPEG or PNG up to `WHATSAPP_PICTURE_MAX`. */
+export interface WhatsAppPicture {
+  bytes: Uint8Array;
+  contentType: "image/jpeg" | "image/png";
+}
+
+export const WHATSAPP_PICTURE_MAX = 5 * 1024 * 1024;
+
 export interface WhatsAppGateway {
   session(orgId: string): Promise<WhatsAppSession>;
   /** Starts pairing (a QR follows) or resumes a paired session. */
   start(orgId: string): Promise<WhatsAppSession>;
-  /** `to`: digits with the country code, or a group's address. */
-  send(orgId: string, to: string, text: string): Promise<{ id: string }>;
+  /** `to`: digits with the country code, or a group's address. With `picture`, `text` is its caption and may be empty. */
+  send(orgId: string, to: string, text: string, picture?: WhatsAppPicture): Promise<{ id: string }>;
   /** The groups the workspace's phone is in. */
   groups(orgId: string): Promise<WhatsAppGroup[]>;
   /** Without `after` the latest entries, with it what came next. */
@@ -84,6 +92,7 @@ const ENTRY_KINDS: ReadonlySet<string> = new Set(["message", "joined", "left"]);
 const NAME_MAX = 200;
 const ENTRY_TEXT_MAX = 2_100;
 const TIMEOUT_MS = 15_000;
+const PICTURE_TIMEOUT_MS = 60_000;
 
 /** What the service answered, kept to the shapes this side expects. */
 export function readSession(body: unknown): WhatsAppSession {
@@ -146,7 +155,7 @@ export function readGroupRead(body: unknown): WhatsAppGroupRead {
 export function createHttpWhatsApp(options: { url: string; apiKey?: string; fetch?: typeof fetch }): WhatsAppGateway {
   const base = options.url.replace(/\/+$/, "");
   const doFetch = options.fetch ?? fetch;
-  const call = async (method: string, orgId: string, path = "", body?: unknown) => {
+  const call = async (method: string, orgId: string, path = "", body?: unknown, timeoutMs = TIMEOUT_MS) => {
     let res: Response;
     try {
       res = await doFetch(`${base}/v1/sessions/${encodeURIComponent(orgId)}${path}`, {
@@ -156,7 +165,7 @@ export function createHttpWhatsApp(options: { url: string; apiKey?: string; fetc
           ...(body === undefined ? {} : { "content-type": "application/json" }),
         },
         body: body === undefined ? undefined : JSON.stringify(body),
-        signal: AbortSignal.timeout(TIMEOUT_MS),
+        signal: AbortSignal.timeout(timeoutMs),
         redirect: "error",
       });
     } catch {
@@ -170,8 +179,14 @@ export function createHttpWhatsApp(options: { url: string; apiKey?: string; fetc
   return {
     session: async (orgId) => readSession(await call("GET", orgId)),
     start: async (orgId) => readSession(await call("POST", orgId, "/start")),
-    send: async (orgId, to, text) => {
-      const sent = (await call("POST", orgId, "/messages", { to, text })) as { id?: unknown } | null;
+    send: async (orgId, to, text, picture) => {
+      const body = picture
+        ? { to, text, image: { data: Buffer.from(picture.bytes).toString("base64"), mimetype: picture.contentType } }
+        : { to, text };
+      // A picture is uploaded to WhatsApp's media servers before the message goes.
+      const sent = (await call("POST", orgId, "/messages", body, picture ? PICTURE_TIMEOUT_MS : TIMEOUT_MS)) as {
+        id?: unknown;
+      } | null;
       return { id: typeof sent?.id === "string" ? sent.id.slice(0, 128) : "" };
     },
     groups: async (orgId) => readGroups(await call("GET", orgId, "/groups")),
@@ -196,7 +211,7 @@ export function createFakeWhatsApp() {
   const said = new Map<string, WhatsAppGroupEntry[]>();
   const notLinked = () => new WhatsAppError("not_connected", "WhatsApp isn't connected in this workspace.");
   const pairing = new Set<string>();
-  const sent: { orgId: string; to: string; text: string }[] = [];
+  const sent: { orgId: string; to: string; text: string; picture?: WhatsAppPicture }[] = [];
   const view = (orgId: string): WhatsAppSession => {
     const phone = linked.get(orgId);
     if (phone) return { state: "open", qr: null, qrExpiresAt: null, phone, reason: null };
@@ -210,9 +225,9 @@ export function createFakeWhatsApp() {
       if (!linked.has(orgId)) pairing.add(orgId);
       return view(orgId);
     },
-    send: async (orgId, to, text) => {
+    send: async (orgId, to, text, picture) => {
       if (!linked.has(orgId)) throw new WhatsAppError("not_connected", "WhatsApp isn't connected in this workspace.");
-      sent.push({ orgId, to, text });
+      sent.push(picture ? { orgId, to, text, picture } : { orgId, to, text });
       return { id: `wa-${sent.length}` };
     },
     groups: async (orgId) => {

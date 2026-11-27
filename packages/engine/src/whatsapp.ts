@@ -7,15 +7,22 @@
  */
 import {
   WHATSAPP_GROUP_ID,
+  WHATSAPP_PICTURE_MAX,
   WhatsAppError,
   type WhatsAppGateway,
   type WhatsAppGroup,
   type WhatsAppGroupEntry,
+  type WhatsAppPicture,
   type WhatsAppSession,
 } from "@agenteschat/adapters";
 import type { Database } from "@agenteschat/db";
+import type { ArtifactDeps } from "./artifacts";
 import { recordAudit } from "./audit";
+import { UUID } from "./authority";
+import { NotFoundError, ValidationError } from "./errors";
+import { readPictureFile } from "./live/assets";
 import { requireChangePermission, requirePermission } from "./organizations";
+import { replyThreadOf } from "./runs";
 import type { ToolContext, ToolDefinition, ToolOutput, ToolSource } from "./tools/types";
 import { untrustedBlock } from "./untrusted";
 
@@ -178,12 +185,47 @@ export async function disconnectWhatsApp(
 }
 
 const SEND_DESCRIPTION = [
-  "Send a WhatsApp text message from the workspace's linked phone, to a number or to a group the phone is in.",
-  "Use only when a person asked for the message, or a routine's instructions say to send it; never to start a",
-  "conversation nobody asked for. Give `to`, the recipient's full number with its country code (e.g. +55 11",
-  "99999-9999), or `group`, a group's name or address (read_whatsapp lists them), never both.",
-  "A person usually approves each message first. The message is plain text: WhatsApp's own *bold* and _italic_ work.",
+  "Send a WhatsApp message from the workspace's linked phone, to a number or to a group the phone is in: words, or a",
+  "picture with words as its caption. Use only when a person asked for the message, or a routine's instructions say",
+  "to send it; never to start a conversation nobody asked for. Give `to`, the recipient's full number with its",
+  "country code (e.g. +55 11 99999-9999), or `group`, a group's name or address (read_whatsapp lists them), never",
+  "both. For a picture give `image`, the id of a JPEG or PNG file in the Drive you can read (one posted in the",
+  "conversation, uploaded or saved there), up to 5 MB. A person usually approves each message first. The words are",
+  "plain text: WhatsApp's own *bold* and _italic_ work.",
 ].join(" ");
+
+const hasImage = (input: Record<string, unknown>) => typeof input.image === "string" && input.image.trim() !== "";
+
+/** The picture of a send (ADR 0260, pictures): a Drive file the run's agent reads, a JPEG or PNG up to 5 MB. */
+async function pictureFor(
+  artifacts: ArtifactDeps | undefined,
+  ctx: ToolContext,
+  raw: unknown,
+): Promise<{ ok: true; picture: WhatsAppPicture } | { ok: false; message: string }> {
+  if (!artifacts) return { ok: false, message: "This server can't send pictures on WhatsApp." };
+  const id = typeof raw === "string" ? raw.trim() : "";
+  if (!UUID.test(id)) return { ok: false, message: "`image` must be a Drive file's id." };
+  const actor = {
+    type: "agent" as const,
+    agentId: ctx.agentId,
+    channelId: ctx.channelId,
+    threadId: replyThreadOf(ctx),
+    runId: ctx.runId,
+  };
+  let file: Awaited<ReturnType<typeof readPictureFile>>;
+  try {
+    file = await readPictureFile(artifacts, actor, ctx.orgId, id);
+  } catch (err) {
+    if (err instanceof NotFoundError || err instanceof ValidationError)
+      return { ok: false, message: `\`image\`: ${err.message.replace(/\.$/, "")}.` };
+    throw err;
+  }
+  if (file.contentType !== "image/jpeg" && file.contentType !== "image/png")
+    return { ok: false, message: "`image` must be a JPEG or PNG picture: WhatsApp sends no other kind as a photo." };
+  if (file.bytes.length > WHATSAPP_PICTURE_MAX)
+    return { ok: false, message: "`image` is larger than 5 MB: WhatsApp would send it blurred." };
+  return { ok: true, picture: { bytes: file.bytes, contentType: file.contentType } };
+}
 
 const READ_DESCRIPTION = [
   "Read the WhatsApp groups of the workspace's linked phone. Without `group`, lists the groups the phone is in.",
@@ -238,7 +280,11 @@ async function readGroup(gateway: WhatsAppGateway, ctx: ToolContext, input: Reco
  * when the workspace's phone isn't linked. `send_whatsapp` is sensitive: each message is an approval request, unless
  * the agent never asks. `read_whatsapp` only reads, and frames what people wrote as outside words.
  */
-export function createWhatsAppToolSource(deps: { whatsapp: WhatsAppGateway | null | undefined }): ToolSource {
+export function createWhatsAppToolSource(deps: {
+  whatsapp: WhatsAppGateway | null | undefined;
+  /** The Drive, for a picture's bytes; absent, `image` is refused. */
+  artifacts?: ArtifactDeps;
+}): ToolSource {
   return {
     name: "whatsapp",
     async tools() {
@@ -258,21 +304,28 @@ export function createWhatsAppToolSource(deps: { whatsapp: WhatsAppGateway | nul
               description: "Instead of `to`: a group the phone is in, by its name or its address (…@g.us).",
               maxLength: 200,
             },
-            text: { type: "string", description: "The message.", maxLength: WHATSAPP_TEXT_MAX },
+            text: {
+              type: "string",
+              description: "The message, or the picture's caption (optional with `image`).",
+              maxLength: WHATSAPP_TEXT_MAX,
+            },
+            image: {
+              type: "string",
+              description: "A picture to send: a Drive file's id, a JPEG or PNG up to 5 MB. `text` is its caption.",
+            },
           },
-          required: ["text"],
           additionalProperties: false,
         },
         describe(input) {
+          const what = hasImage(input) ? "picture" : "message";
+          const detail =
+            typeof input.text === "string" && input.text.trim() ? input.text.slice(0, WHATSAPP_TEXT_MAX) : undefined;
           if (typeof input.group === "string" && input.group.trim())
-            return {
-              title: `Send a WhatsApp message to the group "${shownName(input.group.trim())}"`,
-              detail: typeof input.text === "string" ? input.text.slice(0, WHATSAPP_TEXT_MAX) : undefined,
-            };
+            return { title: `Send a WhatsApp ${what} to the group "${shownName(input.group.trim())}"`, detail };
           const to = whatsAppNumber(input.to);
           return {
-            title: `Send a WhatsApp message to ${to ? shownNumber(to) : String(input.to ?? "").slice(0, 40)}`,
-            detail: typeof input.text === "string" ? input.text.slice(0, WHATSAPP_TEXT_MAX) : undefined,
+            title: `Send a WhatsApp ${what} to ${to ? shownNumber(to) : String(input.to ?? "").slice(0, 40)}`,
+            detail,
           };
         },
         async checkCall(input, ctx) {
@@ -286,9 +339,14 @@ export function createWhatsAppToolSource(deps: { whatsapp: WhatsAppGateway | nul
                 "`to` must be a phone number with its country code, e.g. +5511999999999; for a group, give `group` instead.",
             };
           const text = typeof input.text === "string" ? input.text.trim() : "";
-          if (!text) return { ok: false, message: "`text` is empty." };
+          if (!text && !hasImage(input)) return { ok: false, message: "`text` is empty: give words, or `image`." };
           if (text.length > WHATSAPP_TEXT_MAX)
             return { ok: false, message: `\`text\` is longer than ${WHATSAPP_TEXT_MAX} characters.` };
+          if (hasImage(input)) {
+            // Before anyone is asked: a file the agent can't read, or one WhatsApp won't take, never reaches a card.
+            const picture = await pictureFor(deps.artifacts, ctx, input.image);
+            if (!picture.ok) return { ok: false, message: picture.message };
+          }
           if (hasGroup) {
             // Before anyone is asked: a group the phone is not in, or a name two groups share, never reaches a card.
             const picked = await pickWhatsAppGroup(gateway, ctx.orgId, input.group);
@@ -298,17 +356,24 @@ export function createWhatsAppToolSource(deps: { whatsapp: WhatsAppGateway | nul
         },
         async execute(input, ctx) {
           const text = typeof input.text === "string" ? input.text.trim() : "";
-          if (!text || text.length > WHATSAPP_TEXT_MAX)
+          if ((!text && !hasImage(input)) || text.length > WHATSAPP_TEXT_MAX)
             return { content: "That text can't be sent: check `text`.", isError: true };
+          let picture: WhatsAppPicture | undefined;
+          if (hasImage(input)) {
+            const read = await pictureFor(deps.artifacts, ctx, input.image);
+            if (!read.ok) return { content: `${read.message} Nothing was sent.`, isError: true };
+            picture = read.picture;
+          }
+          const what = picture ? "a picture" : "the message";
           if (typeof input.group === "string" && input.group.trim()) {
             const picked = await pickWhatsAppGroup(gateway, ctx.orgId, input.group);
             if (!picked.ok)
               return { content: `${picked.message} Nothing was sent.`, isError: true, data: { error: picked.error } };
             try {
-              const sent = await gateway.send(ctx.orgId, picked.group.id, text);
+              const sent = await gateway.send(ctx.orgId, picked.group.id, text, picture);
               return {
-                content: `Sent on WhatsApp to the group "${shownName(picked.group.name)}".`,
-                data: { group: picked.group.id, messageId: sent.id || null },
+                content: `Sent ${what} on WhatsApp to the group "${shownName(picked.group.name)}".`,
+                data: { group: picked.group.id, messageId: sent.id || null, picture: Boolean(picture) },
               };
             } catch (err) {
               return failed(err, "Nothing was sent.");
@@ -317,8 +382,11 @@ export function createWhatsAppToolSource(deps: { whatsapp: WhatsAppGateway | nul
           const to = whatsAppNumber(input.to);
           if (!to) return { content: "That number can't be sent to: check `to`.", isError: true };
           try {
-            const sent = await gateway.send(ctx.orgId, to, text);
-            return { content: `Sent on WhatsApp to ${shownNumber(to)}.`, data: { to, messageId: sent.id || null } };
+            const sent = await gateway.send(ctx.orgId, to, text, picture);
+            return {
+              content: `Sent ${what} on WhatsApp to ${shownNumber(to)}.`,
+              data: { to, messageId: sent.id || null, picture: Boolean(picture) },
+            };
           } catch (err) {
             return failed(err, "Nothing was sent.");
           }

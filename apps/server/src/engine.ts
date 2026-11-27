@@ -501,7 +501,7 @@ export function buildEngine(o: EngineOptions) {
       // A GIF or the agent's sticker when asked (ADR 0091): listed by the workspace's switches and the agent's.
       createMediaToolSource({ pubsub: adapters.pubsub, gifs: adapters.gifs ?? null }),
       // WhatsApp for agents (ADR 0260): only where the server has the service.
-      createWhatsAppToolSource({ whatsapp: adapters.whatsapp }),
+      createWhatsAppToolSource({ whatsapp: adapters.whatsapp, artifacts }),
       // Long work goes to the background and reports back by itself, on every brain (ADR 0121).
       createWorkToolSource({ pubsub: adapters.pubsub }),
       // An agent comes back to a conversation by itself (a CI run, a deploy), instead of promising to.

@@ -8862,7 +8862,7 @@ export const en = {
     whatsapp_send: {
       label: "Send WhatsApp messages",
       description:
-        "Send WhatsApp messages from the workspace's linked phone (Settings › Connectors), to a number or to a group it is in, each approved by a person unless the agent never asks.",
+        "Send WhatsApp messages and pictures from the workspace's linked phone (Settings › Connectors), to a number or to a group it is in, each approved by a person unless the agent never asks.",
     },
     whatsapp_read: {
       label: "Read WhatsApp groups",
@@ -20697,7 +20697,7 @@ export const en = {
     send_whatsapp: {
       label: "Send a WhatsApp message",
       description:
-        "Sends a text from the workspace's linked WhatsApp number to a number or a group, after a person approves it.",
+        "Sends a text, or a picture from the Drive, from the workspace's linked WhatsApp number to a number or a group, after a person approves it.",
     },
     read_whatsapp: {
       label: "Read WhatsApp groups",

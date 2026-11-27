@@ -8273,7 +8273,7 @@
     },
     "whatsapp_send": {
       "label": "WhatsApp-Nachrichten senden",
-      "description": "WhatsApp-Nachrichten vom verknüpften Telefon des Workspaces senden (Einstellungen › Connectors), an eine Nummer oder an eine Gruppe, in der es ist, jede von einer Person freigegeben, außer der Agent fragt nie."
+      "description": "WhatsApp-Nachrichten und Bilder vom verknüpften Telefon des Workspaces senden (Einstellungen › Connectors), an eine Nummer oder an eine Gruppe, in der es ist, jede von einer Person freigegeben, außer der Agent fragt nie."
     },
     "whatsapp_read": {
       "label": "WhatsApp-Gruppen lesen",
@@ -19834,7 +19834,7 @@
     },
     "send_whatsapp": {
       "label": "WhatsApp-Nachricht senden",
-      "description": "Sendet einen Text von der verknüpften WhatsApp-Nummer des Workspaces an eine Nummer oder eine Gruppe, nachdem eine Person ihn freigegeben hat."
+      "description": "Sendet einen Text oder ein Bild aus dem Drive von der verknüpften WhatsApp-Nummer des Workspaces an eine Nummer oder eine Gruppe, nachdem eine Person zugestimmt hat."
     },
     "read_whatsapp": {
       "label": "WhatsApp-Gruppen lesen",

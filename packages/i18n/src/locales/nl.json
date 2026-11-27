@@ -8311,7 +8311,7 @@
     },
     "whatsapp_send": {
       "label": "WhatsApp-berichten sturen",
-      "description": "WhatsApp-berichten sturen vanaf de gekoppelde telefoon van de workspace (Instellingen › Connectors), naar een nummer of naar een groep waarin die zit, elk goedgekeurd door een persoon, tenzij de agent nooit vraagt."
+      "description": "WhatsApp-berichten en afbeeldingen sturen vanaf de gekoppelde telefoon van de workspace (Instellingen › Connectors), naar een nummer of naar een groep waarin die zit, elk goedgekeurd door een persoon, tenzij de agent nooit vraagt."
     },
     "whatsapp_read": {
       "label": "WhatsApp-groepen lezen",
@@ -19908,7 +19908,7 @@
     },
     "send_whatsapp": {
       "label": "WhatsApp-bericht sturen",
-      "description": "Stuurt een tekst vanaf het gekoppelde WhatsApp-nummer van de workspace naar een nummer of een groep, nadat een persoon het goedkeurt."
+      "description": "Stuurt een tekst, of een afbeelding uit de Drive, vanaf het gekoppelde WhatsApp-nummer van de workspace naar een nummer of een groep, nadat een persoon het goedkeurt."
     },
     "read_whatsapp": {
       "label": "WhatsApp-groepen lezen",
