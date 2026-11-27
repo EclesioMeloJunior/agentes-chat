@@ -214,6 +214,63 @@ test("Meta Ads: Login for Business by its configuration; created paused; spend a
   expect(byName.get("meta_ads_archive")?.rememberAs).toBe("archive");
 });
 
+test("Meta Ads insights: link clicks apart from every click, a period by days, a row per day, a breakdown, more rows left", async () => {
+  const v = fakeVendors({
+    "GET graph.facebook.com/v27.0/act_1/insights": () =>
+      Response.json({
+        data: [{ spend: "6.50", inline_link_clicks: "21", frequency: "1.2", date_start: "2026-11-20" }],
+        paging: { next: "https://graph.facebook.com/v27.0/act_1/insights?after=x" },
+      }),
+    "GET graph.facebook.com/v27.0/42/insights": () => Response.json({ data: [] }),
+  });
+  const ctx = await world(v.http);
+  await connect(v.http, "meta-ads");
+  const insights = () => v.calls.filter((c) => c.key.endsWith("/insights")).at(-1)?.url.searchParams;
+
+  const out = await result(ctx, "meta_ads_get_insights", {
+    id: "act_1",
+    since: "2026-11-01",
+    until: "2026-11-26",
+    level: "ad",
+    daily: true,
+    breakdown: "placement",
+  });
+  expect(JSON.parse(out.content)).toEqual({
+    rows: [{ spend: "6.50", inline_link_clicks: "21", frequency: "1.2", date_start: "2026-11-20" }],
+    more: true,
+  });
+  const sent = insights();
+  const fields = sent?.get("fields")?.split(",") ?? [];
+  for (const field of ["inline_link_clicks", "cost_per_inline_link_click", "frequency", "cost_per_action_type"])
+    expect(fields).toContain(field);
+  expect(JSON.parse(sent?.get("time_range") ?? "null")).toEqual({ since: "2026-11-01", until: "2026-11-26" });
+  expect(sent?.get("date_preset")).toBeNull();
+  expect(sent?.get("time_increment")).toBe("1");
+  expect(sent?.get("breakdowns")).toBe("publisher_platform,platform_position");
+  expect(sent?.get("level")).toBe("ad");
+
+  // Without a period it is the last 7 days, one row for the whole of it, nothing split.
+  expect(JSON.parse((await result(ctx, "meta_ads_get_insights", { id: "42" })).content)).toEqual({
+    rows: [],
+    more: false,
+  });
+  expect(insights()?.get("date_preset")).toBe("last_7d");
+  expect(insights()?.get("time_increment")).toBeNull();
+  expect(insights()?.get("breakdowns")).toBeNull();
+
+  // A period needs both ends, real days, in order; nothing goes to Meta otherwise.
+  const before = v.calls.length;
+  for (const bad of [
+    { since: "2026-11-01" },
+    { since: "2026-02-30", until: "2026-03-02" },
+    { since: "2026-11-26", until: "2026-11-01" },
+  ]) {
+    const refused = await result(ctx, "meta_ads_get_insights", { id: "act_1", ...bad });
+    expect(refused).toMatchObject({ isError: true, data: { code: "connector.refused" } });
+  }
+  expect(v.calls.length).toBe(before);
+});
+
 test("Meta's deauthorize callback drops that account's connections; an unsigned one is nobody", async () => {
   const v = fakeVendors();
   await world(v.http);
