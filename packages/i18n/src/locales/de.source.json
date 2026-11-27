@@ -16788,6 +16788,9 @@
   "proposals.undo": {
     "value": "Undo"
   },
+  "proposals.applyAnyway": {
+    "value": "Apply anyway"
+  },
   "proposals.appliedSome": {
     "value": "{{done}} of {{total}} applied"
   },
@@ -37177,6 +37180,9 @@
   "toolNames.label.browser_tabs": {
     "value": "Switch tabs"
   },
+  "toolNames.label.browser_dialog": {
+    "value": "Answer page dialog"
+  },
   "toolNames.label.browser_close": {
     "value": "Close the browser"
   },
@@ -49397,6 +49403,12 @@
   "builtinTools.browser_tabs.description": {
     "value": "Lists, opens, switches or closes tabs."
   },
+  "builtinTools.browser_dialog.label": {
+    "value": "Answer a page's box"
+  },
+  "builtinTools.browser_dialog.description": {
+    "value": "Answers a confirm or prompt box a page opened: OK or Cancel."
+  },
   "builtinTools.browser_read.label": {
     "value": "Read the page"
   },
@@ -50354,6 +50366,9 @@
   },
   "browser.watch.step.browser_tabs": {
     "value": "Changed tabs"
+  },
+  "browser.watch.step.browser_dialog": {
+    "value": "Answered a page's box"
   },
   "browser.watch.step.browser_read": {
     "value": "Read the page"

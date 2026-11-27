@@ -7086,6 +7086,7 @@
     "undoneBy": "Annullato da {{name}}",
     "undoneByYou": "Annullato da te",
     "undo": "Annulla",
+    "applyAnyway": "Applica comunque",
     "appliedSome": "{{done}} di {{total}} applicati",
     "waitingAdmin": "In attesa di un admin",
     "stale": "Superata",
@@ -15720,6 +15721,7 @@
       "browser_wait": "Aspetta la pagina",
       "browser_wait_for": "Aspetta la pagina",
       "browser_tabs": "Cambia scheda",
+      "browser_dialog": "Rispondi a un avviso della pagina",
       "browser_close": "Chiudi il browser",
       "browser_upload": "Carica file",
       "browser_file_upload": "Carica file",
@@ -20806,6 +20808,10 @@
       "label": "Schede del browser",
       "description": "Elenca, apre, cambia o chiude le schede."
     },
+    "browser_dialog": {
+      "label": "Rispondi a un avviso della pagina",
+      "description": "Risponde a una finestra di conferma o di testo aperta dalla pagina: OK o Annulla."
+    },
     "browser_read": {
       "label": "Leggi la pagina",
       "description": "Legge la pagina come testo, con un numero per ogni pulsante, campo e link."
@@ -21243,6 +21249,7 @@
         "browser_open_plain": "Ha aperto una pagina",
         "browser_back": "È tornato alla pagina precedente",
         "browser_tabs": "Ha cambiato scheda",
+        "browser_dialog": "Ha risposto a un avviso della pagina",
         "browser_read": "Ha letto la pagina",
         "browser_click": "Ha fatto clic",
         "browser_fill": "Ha compilato un campo",

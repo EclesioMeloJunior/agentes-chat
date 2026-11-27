@@ -16,6 +16,11 @@ import {
  * agent's own model: "is it true now?" (a step's `expect`, a wait `until`),
  * "where on this page is the answer?" (a read with `find`) and "what closes
  * what covers the page?" (a banner in the way of a click).
+ *
+ * With no judge to answer (a server without one, a key out of credit, a
+ * request that failed), a check and a find are matched as text and marked
+ * `unjudged`, so a plan goes on with what code alone can say instead of
+ * failing: the agent's own model reads the screen. Nothing is dismissed then.
  */
 
 interface Ids {
@@ -130,7 +135,10 @@ async function judged<I extends Ids, R>(
 export const TRUE_AT = 0.6;
 const FALSE_BELOW = 0.35;
 
-export type ConditionResult = { met: true; p: number } | { met: false; p: number } | { met: null; p: number };
+export type ConditionResult = ({ met: true; p: number } | { met: false; p: number } | { met: null; p: number }) & {
+  /** No judge answered: `met` only says whether the screen shows the condition's words as written (true, or null). */
+  unjudged?: true;
+};
 
 const changesText = (c: ScreenChanges | null | undefined) =>
   c && !c.newPage
@@ -211,7 +219,21 @@ const IMAGE_TEXT_CHARS = 60_000;
  * (what text alone can't say: a chart drew, a layout broke).
  */
 export function checkCondition(input: ConditionInput): Promise<ConditionResult> {
-  return judged("screen_check", input, judgeCondition, (r) => ({ decision: r.met, p: r.p }));
+  return judged("screen_check", input, judgeCondition, (r) => ({ decision: r.met, p: r.p })).catch(() =>
+    conditionByWords(input),
+  );
+}
+
+/**
+ * A condition nothing judged: true when the screen shows its words as written (the quoted phrases of
+ * `shows "Saved"`, else the condition itself past a leading article), and unknown otherwise, never false: a
+ * sentence the screen words another way may well hold.
+ */
+function conditionByWords(input: ConditionInput): ConditionResult {
+  const condition = input.condition.trim();
+  const phrases = literalPhrases(condition) ?? [condition.replace(/^(?:the|an?)\s+/i, "")];
+  const shown = phrases.every((w) => plainWords(w) && linesWith(input.observation.lines, w).length > 0);
+  return shown ? { met: true, p: 1, unjudged: true } : { met: null, p: 0.5, unjudged: true };
 }
 
 type ConditionInput = Ids & {
@@ -295,6 +317,11 @@ export interface FoundInPage {
   text: string;
   /** Only part of a long page was searched (where the question's words are, or a request failed): how much. */
   searched?: { lines: number; of: number };
+  /**
+   * No judge answered: nothing weighed whether `text` answers the question. `partly`: the lines with the most of
+   * its words; `no`: no line has any, and `text` is the page itself (in part when long, `…` where lines are left out).
+   */
+  unjudged?: true;
 }
 
 type Window = { from: number; to: number };
@@ -348,7 +375,34 @@ function windowsToAsk(windows: Window[], lines: string[], question: string): Win
  * at all), all at once: a long page takes about as long as a short one.
  */
 export function findInPage(input: FindInput): Promise<FoundInPage> {
-  return judged("screen_find", input, findLines, (r) => ({ decision: r.answered }));
+  return judged("screen_find", input, findLines, (r) => ({ decision: r.answered })).catch(() => linesByWords(input));
+}
+
+/** Lines a find nothing judged gives back, at most. */
+const WORD_LINES = 12;
+
+/**
+ * A find nothing judged: the lines with the most of the question's words (short ones aside: "the", "of", "que"),
+ * for the agent to read, or the page itself when no line has any, as a question in another language than the
+ * page's finds none.
+ */
+function linesByWords(input: FindInput): FoundInPage {
+  const lines = input.observation.lines;
+  const max = input.maxChars ?? 6000;
+  const all = [...new Set(wordsOf(input.question))];
+  const long = all.filter((w) => w.length > 3);
+  const terms = long.length > 0 ? long : all;
+  const hits = lines
+    .map((line, i) => {
+      const said = new Set(wordsOf(line));
+      return { i, score: terms.filter((t) => said.has(t)).length };
+    })
+    .filter((h) => h.score > 0)
+    .sort((a, b) => b.score - a.score || a.i - b.i)
+    .slice(0, WORD_LINES);
+  if (hits.length === 0) return { answered: "no", text: screenText(input.observation, {}, max).text, unjudged: true };
+  const at = hits.map((h) => h.i);
+  return { answered: "partly", text: cutText(withContext(lines, at), max), unjudged: true };
 }
 
 type FindInput = Ids & { question: string; observation: ScreenObservation; maxChars?: number };

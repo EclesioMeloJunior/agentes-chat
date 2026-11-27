@@ -6558,6 +6558,7 @@
     "undoneBy": "Diurungkan oleh {{name}}",
     "undoneByYou": "Diurungkan olehmu",
     "undo": "Urungkan",
+    "applyAnyway": "Tetap terapkan",
     "appliedSome": "{{done}} dari {{total}} diterapkan",
     "waitingAdmin": "Menunggu admin",
     "stale": "Kedaluwarsa",
@@ -14661,6 +14662,7 @@
       "browser_wait": "Tunggu halaman",
       "browser_wait_for": "Tunggu halaman",
       "browser_tabs": "Ganti tab",
+      "browser_dialog": "Jawab dialog halaman",
       "browser_close": "Tutup browser",
       "browser_upload": "Unggah file",
       "browser_file_upload": "Unggah file",
@@ -19556,6 +19558,10 @@
       "label": "Tab browser",
       "description": "Menampilkan daftar, membuka, berpindah, atau menutup tab."
     },
+    "browser_dialog": {
+      "label": "Jawab dialog halaman",
+      "description": "Menjawab kotak konfirmasi atau kotak isian yang dibuka halaman: OK atau Batal."
+    },
     "browser_read": {
       "label": "Baca halaman",
       "description": "Membaca halaman sebagai teks, dengan nomor untuk setiap tombol, kolom, dan tautan."
@@ -19938,6 +19944,7 @@
         "browser_open_plain": "Membuka halaman",
         "browser_back": "Kembali satu halaman",
         "browser_tabs": "Berganti tab",
+        "browser_dialog": "Menjawab dialog halaman",
         "browser_read": "Membaca halaman",
         "browser_click": "Mengklik",
         "browser_fill": "Mengisi kolom",

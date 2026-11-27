@@ -45,6 +45,7 @@ import {
   DESKTOP_SIZE,
   type MachineReplies,
   type MachineRequest,
+  PAGE_DIALOG_CODE,
   parseBrowserInputEvent,
   type RunnerBrowserInfo,
   type RunnerFrame,
@@ -62,6 +63,7 @@ import type { DesktopSessions } from "./desktop-session";
 import { egressProxyChromeArgs } from "./egress-relay";
 import { RunnerError } from "./errors";
 import { processStartedAt } from "./exec";
+import { catchFileChooser, giveFiles } from "./file-chooser";
 import {
   type Box,
   HUMAN,
@@ -77,6 +79,7 @@ import {
 import { GOOGLE_CHROME_LINUX, SYSTEM_BROWSER_DIR } from "./install-script";
 import { readJson, readSmallJson, writeJson } from "./json-file";
 import { bootId } from "./lock";
+import { type DialogNote, dialogAsks, type OpenDialog, type PageDialogs } from "./page-dialogs";
 import { CRASH_WORDS, pageLocale } from "./page-words";
 import { agentFolderName, isInside, ownedSafely } from "./paths";
 import type { Spawn } from "./scope-gate";
@@ -240,6 +243,27 @@ const UPDATE_IDLE_MS = 10 * 60_000;
 const KEPT_UPDATE_WAIT_MS = 24 * 3600_000;
 const DOWNLOAD_TIMEOUT_MS = 5 * 60_000;
 const QUICK_TIMEOUT_MS = 15_000;
+/**
+ * A `confirm` or `prompt` that opens under a command: how long the command has to answer by itself (`agent-browser
+ * click` does, in tens of milliseconds) before the runner stops waiting on it and answers with the question
+ * (`page-dialogs.ts`). A command that releases a held press only gave up after 30 s.
+ */
+const DIALOG_GRACE_MS = 1_500;
+
+/**
+ * The commands `agent-browser` answers without touching a page, measured with a confirm box open (0.42.0): they
+ * answer in under 100 ms there, where one that reads the page hangs until the box is answered.
+ */
+const DAEMON_ONLY = new Set(["stream", "tab", "dialog", "close"]);
+/** `agent-browser` said its click opened a dialog: how long the runner's own connection has to hear of it too. */
+const DIALOG_HEARD_MS = 500;
+/** A page's `confirm` or `prompt` waits: its question, in place of the command's answer. */
+const dialogWaits = (open: OpenDialog): BrowserAnswer => ({
+  success: false,
+  data: null,
+  code: PAGE_DIALOG_CODE,
+  error: dialogAsks(open),
+});
 /** One input command on the relay: a click or a key answers in milliseconds. */
 const INPUT_TIMEOUT_MS = 5_000;
 /**
@@ -627,9 +651,12 @@ export function chromeVersion(exe: string, platform: string = process.platform):
  * its cookies when Chrome starts again. Measured 2026-10-31 on Chrome for
  * Testing 155: without `--restore-last-session` those cookies were dropped at
  * the next start; with it they stayed, and so did the last session's tabs,
- * which `forgetTabs` removes before each start.
+ * which `forgetTabs` removes before each start. No sound ever plays: a
+ * headless Chrome plays a page's audio (a video, a voice message) through the
+ * computer's own speakers, where the person who lent it hears what agents do.
  */
 export const CHROME_ARGS = [
+  "--mute-audio",
   "--no-first-run",
   "--no-default-browser-check",
   "--disable-blink-features=AutomationControlled",
@@ -1121,6 +1148,11 @@ export interface InputState {
   /** While the person drags: when they made its last event (`at`, their clock) and when it went to the page. */
   drag?: { at: number; sent: number };
 }
+
+/** `agent-browser upload`'s answer for an element that isn't `<input type="file">` (0.39.1: Chrome's own words). */
+const NOT_A_FILE_FIELD = /not a file input/i;
+/** How long a click on an upload button has to open the page's file picker (`uploadByPicker`). */
+const PICKER_WAIT_MS = 8_000;
 
 /** Agent commands the runner does with a pointer path, a held button and typed keys (`humanSteps`). */
 const HUMAN_COMMANDS = new Set(["click", "dblclick", "hover", "fill", "type"]);
@@ -2374,7 +2406,12 @@ export class BrowserManager {
         const told = (acts ? (this.takeCrash(session, true) ?? this.takeBlocked(session)) : null) ?? done;
         d.step = "tabs";
         // A tab command's numbers are the ones the agent was given: nothing closes under them.
-        return { ...told, ...(await this.tabsNow(session, prepared.command === "tab" ? "none" : "all")) };
+        return {
+          ...told,
+          ...(await this.tabsNow(session, prepared.command === "tab" ? "none" : "all")),
+          // What the page said meanwhile is the agent's to hear, not a person's own command's.
+          ...(person ? {} : this.dialogNotes(session)),
+        };
       } finally {
         if (!person) session.agentRunning = Math.max(0, (session.agentRunning ?? 1) - 1);
         opening.close();
@@ -2542,6 +2579,7 @@ export class BrowserManager {
         ...withSetup(setup),
         ...(session.viewport ? { emulated: session.viewport } : {}),
         ...tabs,
+        ...this.dialogNotes(session),
       };
     }).finally(() => {
       session.calls.delete(call);
@@ -2773,6 +2811,10 @@ export class BrowserManager {
   ): Promise<BrowserAnswer> {
     const { command, args, timeoutMs } = p;
     if (taken?.aborted) return TOOK_OVER;
+    // A confirm or prompt waits on a page: only its answer, or closing the browser, is tried. Anything else would
+    // hang on that page, so the question answers in its place before any check of the page.
+    const waiting = this.dialogsOf(session)?.open();
+    if (waiting && command !== "dialog" && command !== "close") return dialogWaits(waiting);
     if (session.deadline) session.deadline.step = command;
     session.allowed = allowed;
     const actor = vault?.actor ?? agent;
@@ -2813,6 +2855,15 @@ export class BrowserManager {
     if (!READS.has(command)) await this.ensureOwnChrome(agent, session, desktop, allowed, false, setup);
     if (session.deadline) session.deadline.step = command;
     if (!NO_PAGE.has(command)) await this.foreground(session, stops);
+    const dialogs = this.dialogsOf(session);
+    const dialogsSeen = dialogs?.seen() ?? 0;
+    if (command === "dialog") {
+      const own = await this.answerDialog(session, args);
+      if (own) {
+        this.noteAct(session, command, [], own, link);
+        return own;
+      }
+    }
     if (command === "agentes:viewport") {
       const answer = this.setViewport(session, browserViewportOf(args) ?? null);
       this.noteAct(session, command, args, answer, link);
@@ -2844,7 +2895,7 @@ export class BrowserManager {
       return TOOK_OVER;
     }
     if (!human) await this.toolbarGoes(session, command, stops);
-    const plain =
+    const direct =
       human ??
       // `--human`: its drag goes along an eased curve from where the pointer is, slower than a script's.
       (await this.run(
@@ -2855,6 +2906,11 @@ export class BrowserManager {
           ...(stops ? { signal: stops } : {}),
         },
       ));
+    // An upload aimed at a button rather than a file field: through the page's own picker (`file-chooser.ts`).
+    const plain =
+      command === "upload" && !direct.success && NOT_A_FILE_FIELD.test(direct.error ?? "") && !taken?.aborted
+        ? await this.uploadByPicker(session, args, timeoutMs, stops)
+        : direct;
     const answer = taken?.aborted && !plain.success ? TOOK_OVER : plain;
     // agent-browser sizes the page for a full-page shot and leaves it at the window's pixel ratio after (measured on
     // Chrome for Testing 156): the emulated size goes back.
@@ -2869,7 +2925,115 @@ export class BrowserManager {
       const left = await this.leftAllowedSites(session, allowed, signal);
       if (left) return { success: false, data: null, error: left };
     }
-    return answer;
+    // A `confirm` or `prompt` this command opened: its question is the answer, as nothing else runs until it is answered.
+    return (await this.dialogAfter(dialogs, answer, dialogsSeen)) ?? answer;
+  }
+
+  /** The page dialogs of the session's Chrome (`page-dialogs.ts`); none without the runner's DevTools connection. */
+  private dialogsOf(session: Session): PageDialogs | undefined {
+    return session.chrome ? this.counters.get(session.chrome)?.dialogs : undefined;
+  }
+
+  /**
+   * `dialog accept [text] | dismiss | status` for a `confirm` or `prompt` that waits on the runner's own DevTools
+   * connection: answered there, as the daemon may still be held by the command the dialog opened under. Null when
+   * none waits there: the command goes to `agent-browser` as given.
+   */
+  private async answerDialog(session: Session, args: string[]): Promise<BrowserAnswer | null> {
+    const dialogs = this.dialogsOf(session);
+    const open = dialogs?.open();
+    if (!dialogs || !open) return null;
+    const [verb, ...rest] = args;
+    const asked = {
+      type: open.kind,
+      message: open.message,
+      ...(open.suggested ? { defaultPrompt: open.suggested } : {}),
+    };
+    if (verb === "status") return { success: true, data: { hasDialog: true, ...asked } };
+    if (verb !== "accept" && verb !== "dismiss") return null;
+    const accept = verb === "accept";
+    const took = await dialogs.answer(accept, accept && rest.length > 0 ? rest.join(" ") : undefined);
+    if (!took) return { success: false, data: null, error: "That box closed before the answer reached it" };
+    return { success: true, data: { handled: true, accepted: accept, ...asked } };
+  }
+
+  /** After a command: the `confirm` or `prompt` that waits now, as its answer. Null when none does. */
+  private async dialogAfter(
+    dialogs: PageDialogs | undefined,
+    answer: BrowserAnswer,
+    seen: number,
+  ): Promise<BrowserAnswer | null> {
+    if (!dialogs) return null;
+    if (isRecord(answer.data) && answer.data.dialogOpened === true && dialogs.seen() === seen) {
+      await new Promise<void>((resolve) => {
+        let off = () => {};
+        const timer = setTimeout(() => {
+          off();
+          resolve();
+        }, DIALOG_HEARD_MS);
+        off = dialogs.onOpen(() => {
+          clearTimeout(timer);
+          off();
+          resolve();
+        });
+      });
+    }
+    const open = dialogs.open();
+    return open ? dialogWaits(open) : null;
+  }
+
+  /** The dialogs the runner closed in the session's Chrome since the agent last heard, for its answer. */
+  private dialogNotes(session: Session): { dialogs?: DialogNote[] } {
+    const notes = this.dialogsOf(session)?.take() ?? [];
+    return notes.length > 0 ? { dialogs: notes } : {};
+  }
+
+  /**
+   * `upload <button> <file…>` where the button isn't a file field: Chrome's file chooser is intercepted on its pages,
+   * the button is clicked as a person clicks, and the files go into the field the page asked them for. No system
+   * dialog opens, which the agent couldn't drive (Meta Business Suite's "Add photo/video" makes its field only then).
+   */
+  private async uploadByPicker(
+    session: Session,
+    args: string[],
+    timeoutMs: number,
+    signal?: AbortSignal,
+  ): Promise<BrowserAnswer> {
+    const positional = args.filter((a) => !a.startsWith("-"));
+    const [selector, ...files] = positional;
+    const port = session.chrome?.port;
+    if (!selector || !port) return { success: false, data: null, error: "The browser isn't open: open a page first" };
+    const picker = await catchFileChooser({
+      port,
+      fetch: this.opts.fetch ?? fetch,
+      connect: this.opts.connectPage ?? ((u: string) => new WebSocket(u) as unknown as StreamSocket),
+      quickMs: QUICK_TIMEOUT_MS,
+    });
+    try {
+      if (picker.pages === 0) {
+        return { success: false, data: null, error: "That isn't a file field, and its file picker can't be caught" };
+      }
+      const opts = { timeoutMs, ...(signal ? { signal } : {}) };
+      const clicked =
+        (await this.humanly(session, "click", [selector], timeoutMs, signal)) ??
+        (await this.run(session, ["click", selector], opts));
+      if (!clicked.success) return clicked;
+      const field = await picker.chosen(PICKER_WAIT_MS, signal);
+      if (!field) {
+        return {
+          success: false,
+          data: null,
+          error:
+            "That isn't a file field, and clicking it opened no file picker: read the page and aim at the button or field that adds the file",
+        };
+      }
+      const wrong = await giveFiles(field, files, QUICK_TIMEOUT_MS);
+      if (wrong) return { success: false, data: null, error: wrong };
+      this.opts.log(`the browser of ${session.agent.handle} sent ${files.length} file(s) through the page's picker`);
+      return { success: true, data: { files, picker: true } };
+    } finally {
+      picker.close();
+    }
   }
 
   /**
@@ -3905,16 +4069,40 @@ export class BrowserManager {
     // Never without our Chrome: `agent-browser` would launch its own, with the automation markers.
     const chrome = session.chrome;
     if (!chrome) return { success: false, data: null, error: "The browser isn't open: open a page first" };
+    // A page's `confirm` or `prompt` stops everything sent to that page until it is answered: its question answers
+    // in the command's place, at once. A browser that closes takes the question with it.
+    const dialogs = this.counters.get(chrome)?.dialogs;
+    const asked = dialogs?.open();
+    // What the daemon answers by itself (its stream, its tabs, its own dialog command) never touches the page: the
+    // reachability check and the live view go on while a box waits.
+    const daemonOnly = DAEMON_ONLY.has(args[0] ?? "");
+    if (asked && args[0] === "close") await dialogs?.answer(false);
+    else if (asked && !daemonOnly) return dialogWaits(asked);
+    // One that opens under this command: the command gets a moment to answer by itself, then stops waiting on it.
+    const cut = new AbortController();
+    let cutTimer: ReturnType<typeof setTimeout> | undefined;
+    const unwatch = daemonOnly
+      ? undefined
+      : dialogs?.onOpen(() => {
+          clearTimeout(cutTimer);
+          cutTimer = setTimeout(() => {
+            if (dialogs.open()) cut.abort();
+          }, DIALOG_GRACE_MS);
+        });
     session.commandAt = this.now();
     session.running = (session.running ?? 0) + 1;
     const out = await this.spawn(command, [...this.sessionFlags(session, chrome), ...args], {
       timeoutMs: opts.timeoutMs,
       cwd: session.folder,
-      ...(signal ? { signal } : {}),
+      signal: signal ? AbortSignal.any([signal, cut.signal]) : cut.signal,
       ...(opts.stdin !== undefined ? { stdin: opts.stdin } : {}),
     }).finally(() => {
       session.running = (session.running ?? 1) - 1;
+      unwatch?.();
+      clearTimeout(cutTimer);
     });
+    const waits = cut.signal.aborted ? dialogs?.open() : null;
+    if (waits) return dialogWaits(waits);
     if (out.timedOut) {
       return {
         success: false,

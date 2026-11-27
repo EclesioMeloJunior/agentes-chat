@@ -1,4 +1,5 @@
 import { describe, expect, test } from "bun:test";
+import { ProviderError } from "@agenteschat/providers";
 import {
   checkCondition,
   createFakeJudge,
@@ -23,6 +24,7 @@ import {
   type ScreenImage,
   type ScreenObservation,
   type ScreenSurface,
+  SMALL_MODEL_SKIP_MS,
   screenDigest,
   screenOverview,
   screenRef,
@@ -845,5 +847,177 @@ describe("the judge with images", () => {
     await expect(
       judge.ask({ ...ids, kind: "screen_locate", state: {}, questions: { where: { type: "box", instructions: "x" } } }),
     ).rejects.toThrow("images and boxes need Jev");
+  });
+});
+
+/** A server where no model answers a judgment: no Jev, and the workspace's key has no credit. */
+const NOTHING: Judge = {
+  name: "none",
+  ask: () => Promise.reject(new Error("no prepaid credit left at the provider")),
+};
+
+describe("with nothing to judge", () => {
+  const target = (words: string, use: "click" | "fill" = "click") =>
+    resolveTarget({ judge: NOTHING, ...ids, observation: login(), scope: "a", target: words, use });
+
+  test("a target that is an element's name, with its kind and where it is, is found by its words alone", async () => {
+    // "Sign in" is a heading and a button: the kind says which.
+    expect(await target("the Sign in button")).toMatchObject({ found: true, ref: "e5", via: "exact" });
+    expect(await target("the Email field in the Sign in form", "fill")).toMatchObject({ found: true, ref: "e3" });
+    expect(await target("Forgot password link")).toMatchObject({ found: true, ref: "e6" });
+    // The page's own spelling, whatever its case or accents.
+    const pt = observeSnapshot({ text: '- navigation "Afiliados"\n  - button "Compartilhar" [ref=e9]' });
+    const r = await resolveTarget({
+      judge: NOTHING,
+      ...ids,
+      observation: pt,
+      scope: "a",
+      target: "the compartilhar button in the Afiliados bar",
+      use: "click",
+    });
+    expect(r).toMatchObject({ found: true, ref: "e9", via: "exact" });
+    expect(
+      await resolveTarget({
+        judge: NOTHING,
+        ...ids,
+        observation: pt,
+        scope: "a",
+        target: "o botão Compartilhar",
+        use: "click",
+      }),
+    ).toMatchObject({ found: true, ref: "e9" });
+    expect(
+      await resolveTarget({
+        judge: NOTHING,
+        ...ids,
+        observation: pt,
+        scope: "a",
+        target: "Compartilhar button in navigation Afiliados",
+        use: "click",
+      }),
+    ).toMatchObject({ found: true, ref: "e9", via: "exact" });
+  });
+
+  test("a description is never matched by its words, nor a name two elements share", async () => {
+    expect(await target("the green Sign in button")).toMatchObject({ found: false, reason: "unjudged" });
+    expect(await target("the first field", "fill")).toMatchObject({ found: false, reason: "unjudged" });
+    const twice = observeSnapshot({ text: '- button "Delete" [ref=e1]\n- button "Delete" [ref=e2]' });
+    const r = await resolveTarget({
+      judge: NOTHING,
+      ...ids,
+      observation: twice,
+      scope: "a",
+      target: "the Delete button",
+      use: "click",
+    });
+    expect(r.found).toBe(false);
+  });
+
+  test("a condition is its words on the screen: shown is true, anything else is unknown, never false", async () => {
+    const shown = await checkCondition({
+      judge: NOTHING,
+      ...ids,
+      condition: "Create an account",
+      observation: login(),
+    });
+    expect(shown).toEqual({ met: true, p: 1, unjudged: true });
+    const said = await checkCondition({ judge: NOTHING, ...ids, condition: "signed in", observation: login() });
+    expect(said).toEqual({ met: null, p: 0.5, unjudged: true });
+  });
+
+  test("a find is the lines with the most of its words, or the page when none has any", async () => {
+    const some = await findInPage({ judge: NOTHING, ...ids, question: "the password field", observation: login() });
+    expect(some).toMatchObject({ answered: "partly", unjudged: true });
+    expect(some.text).toContain('textbox "Password"');
+    expect(some.text).not.toContain('link "Acme"');
+    const none = await findInPage({ judge: NOTHING, ...ids, question: "preço e desconto", observation: login() });
+    expect(none).toMatchObject({ answered: "no", unjudged: true });
+    expect(none.text).toContain('button "Sign in"');
+  });
+
+  test("a plan reads, waits and checks by words, and says so when the words aren't there", async () => {
+    const read = await runPlan({ judge: NOTHING, ...ids, surface: fakeSurface(PAGES, "home"), scope: "a" }, [
+      { do: "click", target: "the Export button" },
+      { do: "read", find: "orders" },
+    ]);
+    expect(read.stopped).toBeUndefined();
+    expect(read.steps[0]).toMatchObject({ status: "done", via: "exact" });
+    const text = formatPlanReport(read);
+    expect(text.screen).toContain('No model picks the lines that answer "orders" here. The lines of the page with');
+    expect(text.screen).toContain('link "Orders"');
+
+    let t = 0;
+    const clock = () => {
+      t += 100;
+      return t;
+    };
+    const waited = await runPlan(
+      { judge: NOTHING, ...ids, surface: fakeSurface(PAGES, "home"), scope: "a", now: clock },
+      [{ do: "wait", until: "Dashboard", seconds: 5 }],
+    );
+    expect(waited.stopped).toBeUndefined();
+    expect(formatPlanReport(waited).summary).toContain('"Dashboard" showed');
+    const never = await runPlan(
+      { judge: NOTHING, ...ids, surface: fakeSurface(PAGES, "home"), scope: "a", now: clock },
+      [{ do: "wait", until: "the export finished", seconds: 2 }],
+    );
+    expect(formatPlanReport(never).summary).toContain(
+      'the page never showed "the export finished" in those words. Nothing weighs a condition in words here',
+    );
+
+    const checked = await runPlan(
+      { judge: NOTHING, ...ids, surface: fakeSurface(PAGES, "login"), scope: "a", now: clock, expectGraceMs: 300 },
+      [
+        { do: "click", target: "e5", expect: "Dashboard" },
+        { do: "click", target: "Export", expect: "the export started" },
+        { do: "click", target: "Orders" },
+      ],
+    );
+    expect(checked.steps.map((s) => s.status)).toEqual(["done", "failed", "skipped"]);
+    expect(checked.steps[0]?.expected).toEqual({ met: true, p: 1, unjudged: true });
+    expect(formatPlanReport(checked).summary).toContain(
+      "couldn't confirm \"the export started\": the page doesn't show those words",
+    );
+  });
+
+  test("a key with no credit is left alone for a while, and reads as no model until it answers again", async () => {
+    let calls = 0;
+    let credit = false;
+    let at = 0;
+    const llm = createLlmJudge({
+      gateway: {
+        complete: async () => {
+          calls++;
+          if (!credit) throw new ProviderError("no prepaid credit left at the provider", false, 402);
+          return {
+            text: '{"q":0.9}',
+            usage: { inputTokens: 1, outputTokens: 1, cacheReadTokens: 0, cacheWriteTokens: 0 },
+          };
+        },
+      } as never,
+      resolveModel: async () => "m",
+      now: () => at,
+    });
+    const ask = () =>
+      llm.ask({
+        ...ids,
+        kind: "screen_check",
+        state: {},
+        questions: { q: { type: "noul", instructions: "x", criteria: { true: "x", false: "y" } } },
+      });
+    expect(await llm.answers("o")).toBe(true);
+    await expect(ask()).rejects.toThrow("no prepaid credit");
+    await expect(ask()).rejects.toThrow("no credit or isn't valid");
+    expect(calls).toBe(1);
+    expect(await llm.answers("o")).toBe(false);
+    // Another workspace's key is its own.
+    expect(await llm.answers("other")).toBe(true);
+    // Past the wait it is asked again, and still reads as absent until an answer comes.
+    at = SMALL_MODEL_SKIP_MS + 1;
+    expect(await llm.answers("o")).toBe(false);
+    credit = true;
+    expect((await ask()).q).toMatchObject({ noul: 0.9 });
+    expect(calls).toBe(2);
+    expect(await llm.answers("o")).toBe(true);
   });
 });

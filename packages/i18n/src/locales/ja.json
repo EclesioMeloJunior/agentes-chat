@@ -6533,6 +6533,7 @@
     "undoneBy": "{{name}}が元に戻しました",
     "undoneByYou": "あなたが元に戻しました",
     "undo": "元に戻す",
+    "applyAnyway": "それでも適用",
     "appliedSome": "{{total}}件中{{done}}件を適用",
     "waitingAdmin": "管理者の対応待ち",
     "stale": "古い提案",
@@ -14601,6 +14602,7 @@
       "browser_wait": "ページを待機",
       "browser_wait_for": "ページを待機",
       "browser_tabs": "タブを切り替え",
+      "browser_dialog": "ページのダイアログに応答",
       "browser_close": "ブラウザを閉じる",
       "browser_upload": "ファイルをアップロード",
       "browser_file_upload": "ファイルをアップロード",
@@ -19496,6 +19498,10 @@
       "label": "ブラウザのタブ",
       "description": "タブの一覧表示、開く、切り替え、閉じるを行います。"
     },
+    "browser_dialog": {
+      "label": "ページのダイアログに応答",
+      "description": "ページが開いた確認または入力のダイアログに、OK かキャンセルで応答します。"
+    },
     "browser_read": {
       "label": "ページを読む",
       "description": "ページをテキストとして読み、ボタン、入力欄、リンクごとに番号を付けます。"
@@ -19878,6 +19884,7 @@
         "browser_open_plain": "ページを開きました",
         "browser_back": "前のページに戻りました",
         "browser_tabs": "タブを切り替えました",
+        "browser_dialog": "ページのダイアログに応答しました",
         "browser_read": "ページを読みました",
         "browser_click": "クリックしました",
         "browser_fill": "欄に入力しました",

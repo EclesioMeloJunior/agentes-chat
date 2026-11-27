@@ -6573,6 +6573,7 @@
     "undoneBy": "已由 {{name}} 撤销",
     "undoneByYou": "已由你撤销",
     "undo": "撤销",
+    "applyAnyway": "仍然应用",
     "appliedSome": "已应用 {{done}}/{{total}}",
     "waitingAdmin": "等待管理员",
     "stale": "已过时",
@@ -14669,6 +14670,7 @@
       "browser_wait": "等待页面",
       "browser_wait_for": "等待页面",
       "browser_tabs": "切换标签页",
+      "browser_dialog": "回应页面弹窗",
       "browser_close": "关闭浏览器",
       "browser_upload": "上传文件",
       "browser_file_upload": "上传文件",
@@ -19571,6 +19573,10 @@
       "label": "浏览器标签页",
       "description": "列出、打开、切换或关闭标签页。"
     },
+    "browser_dialog": {
+      "label": "回应页面弹窗",
+      "description": "回应页面打开的确认框或输入框：确定或取消。"
+    },
     "browser_read": {
       "label": "阅读页面",
       "description": "以文本形式阅读页面，每个按钮、字段和链接都带有编号。"
@@ -20000,6 +20006,7 @@
         "browser_open_plain": "打开了一个页面",
         "browser_back": "返回了上一页",
         "browser_tabs": "切换了标签页",
+        "browser_dialog": "回应了页面弹窗",
         "browser_read": "阅读了页面",
         "browser_click": "点击了",
         "browser_fill": "填写了一个字段",

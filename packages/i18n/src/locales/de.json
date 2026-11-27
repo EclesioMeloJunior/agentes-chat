@@ -6808,6 +6808,7 @@
     "undoneBy": "Von {{name}} rückgängig gemacht",
     "undoneByYou": "Von dir rückgängig gemacht",
     "undo": "Rückgängig",
+    "applyAnyway": "Trotzdem anwenden",
     "appliedSome": "{{done}} von {{total}} angewendet",
     "waitingAdmin": "Wartet auf einen Admin",
     "stale": "Veraltet",
@@ -15172,6 +15173,7 @@
       "browser_wait": "Auf die Seite warten",
       "browser_wait_for": "Auf die Seite warten",
       "browser_tabs": "Tab wechseln",
+      "browser_dialog": "Dialog der Seite beantworten",
       "browser_close": "Browser schließen",
       "browser_upload": "Datei hochladen",
       "browser_file_upload": "Datei hochladen",
@@ -20160,6 +20162,10 @@
       "label": "Browser-Tabs",
       "description": "Listet Tabs auf, öffnet, wechselt oder schließt sie."
     },
+    "browser_dialog": {
+      "label": "Dialog der Seite beantworten",
+      "description": "Beantwortet ein Bestätigungs- oder Eingabefeld, das eine Seite geöffnet hat: OK oder Abbrechen."
+    },
     "browser_read": {
       "label": "Seite lesen",
       "description": "Liest die Seite als Text, mit einer Nummer für jede Taste, jedes Feld und jeden Link."
@@ -20546,6 +20552,7 @@
         "browser_open_plain": "Eine Seite geöffnet",
         "browser_back": "Eine Seite zurückgegangen",
         "browser_tabs": "Tab gewechselt",
+        "browser_dialog": "Dialog der Seite beantwortet",
         "browser_read": "Die Seite gelesen",
         "browser_click": "Geklickt",
         "browser_fill": "Ein Feld ausgefüllt",

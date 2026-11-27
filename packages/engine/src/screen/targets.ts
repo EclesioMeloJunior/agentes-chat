@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 import type { ScreenKind } from "@agenteschat/adapters";
+import { plainWords } from "../format";
 import type { Judge, JudgeAnswer, JudgeBox, JudgeQuestion } from "../judge";
 import {
   describeElement,
@@ -18,7 +19,9 @@ import {
  * 2. one element whose name is exactly the words (no judge);
  * 3. what the same words found on this site before (the target cache);
  * 4. the judge picks among the screen's elements (a Choice over refs, plus
- *    whether it's there at all);
+ *    whether it's there at all); with no calibrated judge to pick, the one
+ *    element the words name by its exact name, its kind and its place
+ *    (`namedMatch`), else the closest by their words for the agent to pick;
  * 5. on an image of the screen, when the text has nothing that fits (`locate`).
  *
  * The judge only points at something already on the screen; it never decides
@@ -181,6 +184,71 @@ function exactMatch(words: string, use: TargetUse, o: ScreenObservation): Screen
   return null;
 }
 
+/**
+ * Words of a target that say nothing about which element it is: articles and joiners, and the nouns for a part of a
+ * screen (`in the Reports bar`), which only say that the word before them is a place. A word that tells one
+ * element from another by where it is (`first`, `next to`, `below`) is never one of them.
+ */
+const FILLER = new Set(
+  "the a an of in on at to for from with and its this that named called o os as um uma de do da dos das no na nos nas em para com e bar toolbar sidebar section area panel page list menu dialog window form header footer".split(
+    " ",
+  ),
+);
+const MENU_ITEMS = new Set(["menuitem", "menuitemcheckbox", "menuitemradio", "option", "listitem", "treeitem"]);
+/** How a target's words name a kind of element, besides its role's own word (`the Email field`). */
+const KINDS: Record<string, ReadonlySet<string>> = {
+  field: FIELDS,
+  input: FIELDS,
+  box: FIELDS,
+  dropdown: new Set(["combobox", "listbox"]),
+  select: new Set(["combobox", "listbox"]),
+  toggle: new Set(["switch", "checkbox"]),
+  item: MENU_ITEMS,
+  entry: MENU_ITEMS,
+  botao: new Set(["button"]),
+  campo: FIELDS,
+  aba: new Set(["tab"]),
+};
+
+/**
+ * The one element a target names without describing it: its whole name as the screen writes it, and around the name
+ * only its kind (`button`, `the Email field`), where it sits (`in the Sign in form`) and words that say nothing
+ * (`the`, `in`). A word left over (`the green button`, `the first row`) describes, and only a judge weighs a
+ * description: no match. Of several names in the words the longest wins (`Sign in` over `Sign`), and two elements
+ * that fit alike are no match.
+ */
+function namedMatch(words: string, use: TargetUse, o: ScreenObservation): ScreenElement | null {
+  const said = plainWords(words).split(" ").filter(Boolean);
+  if (said.length === 0) return null;
+  const matches: { e: ScreenElement; size: number }[] = [];
+  for (const e of o.elements) {
+    if (!fits(use, e)) continue;
+    const name = plainWords(e.name).split(" ").filter(Boolean);
+    if (name.length === 0 || name.length > said.length) continue;
+    const around = new Set([
+      ...plainWords(e.role).split(" "),
+      ...plainWords(e.context.join(" ")).split(" "),
+      // A role written as one word reads as two too ("text box", "menu item").
+      plainWords(e.role).replace(/\s/g, ""),
+    ]);
+    const accounted = (w: string) => FILLER.has(w) || around.has(w) || (KINDS[w]?.has(e.role) ?? false);
+    for (let at = 0; at + name.length <= said.length; at++) {
+      if (!name.every((w, k) => said[at + k] === w)) continue;
+      const rest = [...said.slice(0, at), ...said.slice(at + name.length)];
+      if (rest.every(accounted)) {
+        matches.push({ e, size: name.length });
+        break;
+      }
+    }
+  }
+  const longest = Math.max(0, ...matches.map((m) => m.size));
+  const best = matches.filter((m) => m.size === longest).map((m) => m.e);
+  if (best.length === 1) return best[0] as ScreenElement;
+  // The same name on a heading and a button: the button is what one acts on.
+  const controls = best.filter((e) => CONTROLS.has(e.role));
+  return controls.length === 1 ? (controls[0] as ScreenElement) : null;
+}
+
 /** The one element with the remembered role, name and place; none or several: the judge decides again. */
 function fromMemory(memory: TargetMemory, o: ScreenObservation): ScreenElement | null {
   const place = memory.context.join(" › ");
@@ -295,7 +363,10 @@ export async function resolveTarget(input: ResolveInput): Promise<TargetResult> 
       questions,
     });
   } catch {
-    // No calibrated judge (or it failed): the closest by their words go back, and the agent picks by number.
+    // No calibrated judge (or it failed): an element the words name outright is taken, as an exact name is.
+    const named = namedMatch(words, input.use, o);
+    if (named) return { found: true, ref: named.ref, element: named, via: "exact", confidence: 1 };
+    // Else the closest by their words go back, and the agent picks by number.
     return { found: false, reason: "unjudged", candidates: closestByWords(words, candidates) };
   }
   return decide(answers, candidates, (picked, costly) => {

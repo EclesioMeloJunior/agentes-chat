@@ -7332,6 +7332,7 @@
     "undoneBy": "Cofnięte przez: {{name}}",
     "undoneByYou": "Cofnięte przez ciebie",
     "undo": "Cofnij",
+    "applyAnyway": "Zastosuj mimo to",
     "appliedSome": "Zastosowano {{done}} z {{total}}",
     "waitingAdmin": "Czeka na administratora",
     "stale": "Nieaktualna",
@@ -16232,6 +16233,7 @@
       "browser_wait": "Poczekaj na stronę",
       "browser_wait_for": "Poczekaj na stronę",
       "browser_tabs": "Przełącz karty",
+      "browser_dialog": "Odpowiedz na komunikat strony",
       "browser_close": "Zamknij przeglądarkę",
       "browser_upload": "Prześlij plik",
       "browser_file_upload": "Prześlij plik",
@@ -21415,6 +21417,10 @@
       "label": "Karty przeglądarki",
       "description": "Wyświetla, otwiera, przełącza lub zamyka karty."
     },
+    "browser_dialog": {
+      "label": "Odpowiedz na komunikat strony",
+      "description": "Odpowiada na okno potwierdzenia lub wpisywania otwarte przez stronę: OK lub Anuluj."
+    },
     "browser_read": {
       "label": "Przeczytaj stronę",
       "description": "Czyta stronę jako tekst, z numerem dla każdego przycisku, pola i linku."
@@ -21855,6 +21861,7 @@
         "browser_open_plain": "Otwarto stronę",
         "browser_back": "Cofnięto o stronę",
         "browser_tabs": "Zmieniono karty",
+        "browser_dialog": "Odpowiedziano na komunikat strony",
         "browser_read": "Przeczytano stronę",
         "browser_click": "Kliknięto",
         "browser_fill": "Wypełniono pole",

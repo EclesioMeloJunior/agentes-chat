@@ -186,6 +186,12 @@ export function formatPlanReport(r: PlanReport): FormattedReport {
     .map((s) => {
       const f = s.found as NonNullable<StepReport["found"]>;
       const part = f.searched ? ` (searched ${f.searched.lines} of the ${noun}'s ${f.searched.of} lines)` : "";
+      if (f.unjudged) {
+        // Lines picked by their words, not by a model: said as that, so they aren't read as an answer.
+        return f.answered === "no"
+          ? `No model picks the lines that answer "${f.question}" here, and no line of the ${noun} has its words. The ${noun} (… marks what is left out):\n${f.text}`
+          : `No model picks the lines that answer "${f.question}" here. The lines of the ${noun} with the most of its words (… marks what is left out):\n${f.text}`;
+      }
       if (f.answered === "no" || !f.text) return `Nothing on the ${noun} answers "${f.question}"${part}.`;
       return `Where the ${noun} answers "${f.question}"${f.answered === "partly" ? " (maybe only in part)" : ""}${part}:\n${f.text}`;
     });

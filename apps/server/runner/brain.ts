@@ -2115,7 +2115,7 @@ export interface BrainManagerOptions {
   claudeVersion?: () => string | null | undefined;
   /**
    * Single-user mode's shared folder (ADR 0115; null in system mode or without one): its `bin/` goes at the end of
-   * the CLI's PATH, so the agent's subagents find by name what the agent installed there (`withSharedBin`).
+   * the CLI's PATH, so the agent's subagents find by name what the agent installed there (`applySharedBin`).
    */
   sharedFolder?: () => string | null | undefined;
   /** How Claude Code starts (a worker under systemd: in the agent's AI CLIs slice, `scope-gate.ts`). */
