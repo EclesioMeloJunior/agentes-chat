@@ -1,0 +1,17 @@
+The whatsapp image of agentes.chat (AGPL-3.0-only, the repository's LICENSE) holds these packages, unchanged, each
+under its own license:
+
+zapo-js and @zapo-js/store-sqlite, the WhatsApp Web protocol in TypeScript, by vinikjkkj
+  https://github.com/vinikjkkj/zapo
+  License: MIT
+
+better-sqlite3, by Joshua Wise
+  https://github.com/WiseLibs/better-sqlite3
+  License: MIT
+
+qrcode (node-qrcode), by Ryan Day
+  https://github.com/soldair/node-qrcode
+  License: MIT
+
+WhatsApp is a trademark of WhatsApp LLC. This service is not made, endorsed or supported by WhatsApp or Meta: it links
+a phone's account as a companion device, the way WhatsApp Web does, and WhatsApp's terms apply to that account.

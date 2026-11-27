@@ -419,6 +419,7 @@ export * from "./wallpaper-photos";
 export * from "./web-push";
 export * from "./web-tools";
 export * from "./webhooks";
+export * from "./whatsapp";
 export * from "./wiki";
 export * from "./wiki-dm";
 export * from "./wiki-github";

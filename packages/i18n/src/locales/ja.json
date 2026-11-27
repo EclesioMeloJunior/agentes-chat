@@ -5106,6 +5106,7 @@
         "draft": "下書きを保存"
       },
       "vault_make_password": "パスワードを作成",
+      "send_whatsapp": "WhatsApp メッセージを送信",
       "pg_query": "{{target}}を照会",
       "request_approval": {
         "merge": "{{target}}をマージ",
@@ -7949,6 +7950,14 @@
     "git_git_write": {
       "label": "ブランチをプッシュ（git push）",
       "description": "agentes/{agent}/…ブランチにコミットをプッシュします。デフォルトブランチへのプッシュ、強制プッシュ、タグは行いません。ブランチの削除や他人のブランチへのプッシュは、先に承認を求めます。"
+    },
+    "whatsapp_send": {
+      "label": "WhatsApp メッセージを送る",
+      "description": "ワークスペースにリンクした電話 (設定 › コネクタ) から、番号またはその電話が参加しているグループへ WhatsApp メッセージを送ります。エージェントが一切確認しない設定でない限り、1 通ごとに人が承認します。"
+    },
+    "whatsapp_read": {
+      "label": "WhatsApp グループを読む",
+      "description": "ワークスペースにリンクした電話が参加しているグループを一覧し、最近そこで話された内容を読みます。個人チャットは読みません。"
     },
     "github_git_read": {
       "label": "リポジトリをクローン（git）",
@@ -13045,6 +13054,32 @@
       }
     }
   },
+  "whatsApp": {
+    "title": "WhatsApp",
+    "text": "電話の WhatsApp をリンクすると、許可したエージェントがその番号から人やグループへメッセージを送り (エージェントが一切確認しない設定でない限り 1 通ごとに人が承認)、グループの会話を読めます。WhatsApp Web と同じ方法でリンクし、その番号には WhatsApp の規約が適用されます。",
+    "off": "まだスマートフォンがリンクされていません。",
+    "connect": "スマートフォンをリンク",
+    "starting": "WhatsApp からコードを取得中…",
+    "scanTitle": "スマートフォンでこのコードをスキャン",
+    "scanSteps": "スマートフォンで WhatsApp を開き、設定 › リンク済みデバイス › デバイスをリンク の順に進みます。",
+    "qrAlt": "WhatsApp をリンクする QR コード",
+    "linked": "エージェントはこの番号から WhatsApp メッセージを送り、グループを読みます。",
+    "closed": "リンク済みですがオフラインです。自動で再接続します。",
+    "disconnect": "リンクを解除",
+    "failed": "WhatsApp サービスが応答しませんでした。",
+    "retry": "再試行",
+    "state": {
+      "off": "未リンク",
+      "starting": "開始中",
+      "qr": "スキャン待ち",
+      "open": "リンク済み",
+      "closed": "再接続中"
+    },
+    "remove": {
+      "title": "WhatsApp のリンクを解除しますか？",
+      "text": "このワークスペースはスマートフォンのリンク済みデバイスから外れます。もう一度スマートフォンをリンクするまで、エージェントは WhatsApp メッセージを送信できません。"
+    }
+  },
   "githubApp": {
     "title": "GitHubリポジトリ",
     "text": "agentes.chat アプリがインストールされている場所では、エージェントがアプリとしてプルリクエスト、Issue、コメント、コミットを作成し、エージェントの名前と依頼した人が添えられます。",
@@ -17653,6 +17688,7 @@
         "organization": "ワークスペース",
         "account": "AIアカウント",
         "github_app": "GitHubアプリ",
+        "whatsapp": "WhatsApp のリンク",
         "git": "リポジトリ",
         "import": "インポート",
         "webhook": "Webhook",
@@ -19131,6 +19167,14 @@
     "vault_save": {
       "label": "Vaultに保存",
       "description": "連絡先、ログインのユーザー名、説明を保存・更新します。"
+    },
+    "send_whatsapp": {
+      "label": "WhatsApp メッセージを送信",
+      "description": "人が承認したあと、ワークスペースにリンクした WhatsApp 番号から番号またはグループへテキストを送ります。"
+    },
+    "read_whatsapp": {
+      "label": "WhatsApp グループを読む",
+      "description": "リンクした電話のグループを一覧し、グループで最近話された内容を読みます。個人チャットは読みません。"
     },
     "vault_delete": {
       "label": "Vaultから削除",

@@ -277,6 +277,7 @@ import type {
   UsageReport,
   WaitingList,
   WebhookSetup,
+  WhatsAppStatus,
   WifiIphones,
   WifiPairing,
   WikiGraph,
@@ -414,6 +415,11 @@ export function createHttpApi(options: TransportOptions = {}): HttpApi {
       taskSteps: (orgId, runId) => request<TaskSteps>(`${org(orgId)}/task-manager/${enc(runId)}/steps`),
       continueTasks: (orgId, runIds) =>
         request<{ continued: number }>(`${org(orgId)}/task-manager/continue`, { json: { runIds } }),
+    },
+    whatsapp: {
+      status: (orgId) => request<WhatsAppStatus>(`${org(orgId)}/whatsapp`),
+      connect: (orgId) => request<WhatsAppStatus>(`${org(orgId)}/whatsapp/connect`, { method: "POST" }),
+      disconnect: (orgId) => request<void>(`${org(orgId)}/whatsapp`, { method: "DELETE" }),
     },
     mail: {
       providers: (orgId) => request<MailProviders>(`${org(orgId)}/mail/providers`),

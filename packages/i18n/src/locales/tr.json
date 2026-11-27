@@ -5293,6 +5293,7 @@
         "draft": "Taslak kaydetme"
       },
       "vault_make_password": "Parola oluştur",
+      "send_whatsapp": "WhatsApp mesajı gönder",
       "pg_query": "{{target}} sorgula",
       "request_approval": {
         "merge": "{{target}} birleştir",
@@ -8221,6 +8222,14 @@
     "git_git_write": {
       "label": "Dal gönderme (git push)",
       "description": "agentes/{agent}/… dallarına commit gönderme: asla varsayılan dala değil, force push yok, etiket yok. Dal silmek ve başkasının dalına göndermek önce onay ister."
+    },
+    "whatsapp_send": {
+      "label": "WhatsApp mesajı gönderme",
+      "description": "Çalışma alanına bağlı telefondan (Ayarlar › Bağlayıcılar) bir numaraya veya telefonun içinde olduğu bir gruba WhatsApp mesajı gönderme, ajan hiç sormayacak şekilde ayarlanmadıysa her biri bir kişinin onayıyla."
+    },
+    "whatsapp_read": {
+      "label": "WhatsApp gruplarını okuma",
+      "description": "Çalışma alanına bağlı telefonun içinde olduğu grupları listeleme ve son zamanlarda orada söylenenleri okuma, özel sohbetleri asla."
     },
     "github_git_read": {
       "label": "Depo klonlama (git)",
@@ -13535,6 +13544,32 @@
       }
     }
   },
+  "whatsApp": {
+    "title": "WhatsApp",
+    "text": "Bir telefonun WhatsApp'ını bağlayın, izin verdiğiniz ajanlar o numaradan kişilere veya gruplarına mesaj gönderir (ajan hiç sormayacak şekilde ayarlanmadıysa her biri bir kişinin onayıyla) ve gruplarında söylenenleri okur. WhatsApp Web gibi bağlanır ve o numara için WhatsApp'ın koşulları geçerlidir.",
+    "off": "Henüz bağlı telefon yok.",
+    "connect": "Telefon bağla",
+    "starting": "WhatsApp’tan kod alınıyor…",
+    "scanTitle": "Bu kodu telefonla tarayın",
+    "scanSteps": "Telefonda WhatsApp’ı açın, ardından Ayarlar › Bağlı cihazlar › Cihaz bağla.",
+    "qrAlt": "WhatsApp’ı bağlamak için QR kodu",
+    "linked": "Ajanlar bu numaradan WhatsApp mesajı gönderir ve gruplarını okur.",
+    "closed": "Bağlı ama çevrimdışı. Kendiliğinden yeniden bağlanır.",
+    "disconnect": "Bağlantıyı kaldır",
+    "failed": "WhatsApp hizmeti yanıt vermedi.",
+    "retry": "Tekrar dene",
+    "state": {
+      "off": "Bağlı değil",
+      "starting": "Başlatılıyor",
+      "qr": "Tarama bekleniyor",
+      "open": "Bağlı",
+      "closed": "Yeniden bağlanıyor"
+    },
+    "remove": {
+      "title": "WhatsApp bağlantısı kaldırılsın mı?",
+      "text": "Bu çalışma alanı telefonun bağlı cihazlarından çıkar. Yeniden bir telefon bağlanana kadar ajanlar WhatsApp mesajı gönderemez."
+    }
+  },
   "githubApp": {
     "title": "GitHub depoları",
     "text": "agentes.chat uygulamasının yüklü olduğu yerlerde ajanlar çekme isteklerini, sorun kayıtlarını, yorumları ve commit'leri uygulama olarak açar, ajanın adı ve isteyen kişiyle birlikte.",
@@ -18217,6 +18252,7 @@
         "organization": "çalışma alanı",
         "account": "bir yapay zeka hesabı",
         "github_app": "GitHub uygulaması",
+        "whatsapp": "WhatsApp bağlantısı",
         "git": "bir depo",
         "import": "bir içe aktarma",
         "webhook": "bir webhook",
@@ -19717,6 +19753,14 @@
     "vault_save": {
       "label": "Vault'a kaydet",
       "description": "İletişim bilgilerini, bir girişin kullanıcı adını ya da bir açıklamayı kaydeder veya günceller."
+    },
+    "send_whatsapp": {
+      "label": "WhatsApp mesajı gönder",
+      "description": "Bir kişi onayladıktan sonra çalışma alanına bağlı WhatsApp numarasından bir numaraya veya gruba metin gönderir."
+    },
+    "read_whatsapp": {
+      "label": "WhatsApp gruplarını okuma",
+      "description": "Bağlı telefonun gruplarını listeler ve bir grupta son zamanlarda söylenenleri okur, özel sohbeti asla."
     },
     "vault_delete": {
       "label": "Vault'tan sil",

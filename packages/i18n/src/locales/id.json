@@ -5124,6 +5124,7 @@
         "draft": "Menyimpan draf"
       },
       "vault_make_password": "Buat kata sandi",
+      "send_whatsapp": "Kirim pesan WhatsApp",
       "pg_query": "Kueri {{target}}",
       "request_approval": {
         "merge": "Lakukan merge {{target}}",
@@ -7984,6 +7985,14 @@
     "git_git_write": {
       "label": "Push branch (git push)",
       "description": "Push commit ke branch agentes/{agent}/…: tidak pernah ke branch default, tanpa force push, tanpa tag. Menghapus branch dan push ke branch orang lain minta persetujuan dulu."
+    },
+    "whatsapp_send": {
+      "label": "Kirim pesan WhatsApp",
+      "description": "Kirim pesan WhatsApp dari ponsel yang ditautkan ke workspace (Pengaturan › Konektor), ke sebuah nomor atau ke grup yang diikutinya, masing-masing disetujui seseorang kecuali agen tidak pernah bertanya."
+    },
+    "whatsapp_read": {
+      "label": "Baca grup WhatsApp",
+      "description": "Tampilkan grup yang diikuti ponsel yang ditautkan ke workspace dan baca apa yang dikatakan di sana belakangan ini, tidak pernah obrolan pribadinya."
     },
     "github_git_read": {
       "label": "Kloning repositori (git)",
@@ -13105,6 +13114,32 @@
       }
     }
   },
+  "whatsApp": {
+    "title": "WhatsApp",
+    "text": "Tautkan WhatsApp sebuah ponsel dan agen yang Anda izinkan mengirim pesan dari nomornya, ke orang atau grupnya, masing-masing disetujui seseorang kecuali agen tidak pernah bertanya, serta membaca apa yang dikatakan grupnya. Penautannya seperti WhatsApp Web, dan ketentuan WhatsApp berlaku untuk nomor itu.",
+    "off": "Belum ada ponsel yang ditautkan.",
+    "connect": "Tautkan ponsel",
+    "starting": "Mengambil kode dari WhatsApp…",
+    "scanTitle": "Pindai kode ini dengan ponsel",
+    "scanSteps": "Di ponsel, buka WhatsApp, lalu Setelan › Perangkat tertaut › Tautkan perangkat.",
+    "qrAlt": "Kode QR untuk menautkan WhatsApp",
+    "linked": "Agen mengirim pesan WhatsApp dari nomor ini dan membaca grupnya.",
+    "closed": "Tertaut tetapi offline. Akan tersambung lagi dengan sendirinya.",
+    "disconnect": "Putuskan tautan",
+    "failed": "Layanan WhatsApp tidak menjawab.",
+    "retry": "Coba lagi",
+    "state": {
+      "off": "Belum tertaut",
+      "starting": "Memulai",
+      "qr": "Menunggu pemindaian",
+      "open": "Tertaut",
+      "closed": "Menyambung ulang"
+    },
+    "remove": {
+      "title": "Putuskan tautan WhatsApp?",
+      "text": "Ruang kerja ini keluar dari perangkat tertaut ponsel. Agen tidak bisa mengirim pesan WhatsApp sampai ponsel ditautkan lagi."
+    }
+  },
   "githubApp": {
     "title": "Repositori GitHub",
     "text": "Di tempat aplikasi agentes.chat terpasang, agen membuka pull request, issue, komentar, dan commit sebagai aplikasi itu, dengan nama agen dan orang yang meminta.",
@@ -17713,6 +17748,7 @@
         "organization": "ruang kerja",
         "account": "akun AI",
         "github_app": "aplikasi GitHub",
+        "whatsapp": "tautan WhatsApp",
         "git": "repositori",
         "import": "impor",
         "webhook": "webhook",
@@ -19191,6 +19227,14 @@
     "vault_save": {
       "label": "Simpan ke Vault",
       "description": "Menyimpan atau memperbarui kontak, nama pengguna login, atau deskripsi."
+    },
+    "send_whatsapp": {
+      "label": "Kirim pesan WhatsApp",
+      "description": "Mengirim teks dari nomor WhatsApp yang ditautkan ke workspace ke sebuah nomor atau grup, setelah seseorang menyetujuinya."
+    },
+    "read_whatsapp": {
+      "label": "Baca grup WhatsApp",
+      "description": "Menampilkan grup ponsel yang ditautkan dan membaca apa yang dikatakan sebuah grup belakangan ini, tidak pernah obrolan pribadi."
     },
     "vault_delete": {
       "label": "Hapus dari Vault",

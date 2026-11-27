@@ -108,6 +108,7 @@ import type {
   TeamTemplate,
   UnreadTask,
   UsageQueue,
+  WhatsAppStatus,
   WorkspaceLimits,
 } from "@agenteschat/client";
 import { ApiError, codeSuggestionOf } from "@agenteschat/client";
@@ -292,6 +293,8 @@ export interface FakeState {
    * installable. `uninstallRefused`: GitHub doesn't confirm a removal's uninstall.
    */
   githubApp?: GitHubAppInfo & { uninstallRefused?: boolean };
+  /** The workspace's WhatsApp number (ADR 0260); unset = the server has no WhatsApp service. */
+  whatsApp?: WhatsAppStatus;
   githubAccess?: { orgs: string[] | null; manageUrl: string | null };
   /** The workspace's Composio calls this month (default: none counted, no cap). */
   composioUsage?: ComposioUsage;
@@ -1303,6 +1306,7 @@ const id = (prefix: string) => `${prefix}-${++n}`;
 type FakedParts =
   | "apps"
   | "integrationApps"
+  | "whatsapp"
   | "wiki"
   | "notifications"
   | "sandbox"
@@ -4709,6 +4713,21 @@ export function createFakeApi(state: FakeState = seedState(), options: { seed?: 
     ),
     artifacts,
     ...createMockPlanning(ctx, (method, ...args) => state.calls.push({ method, args })),
+    whatsapp: {
+      status: async () =>
+        state.whatsApp ?? { available: false, state: "off", qr: null, qrExpiresAt: null, phone: null, reason: null },
+      connect: async (orgId) => {
+        state.calls.push({ method: "whatsapp.connect", args: [orgId] });
+        const now = state.whatsApp;
+        if (!now) throw new ApiError(404, "not_found", "Not found");
+        if (now.state !== "open") state.whatsApp = { ...now, state: "qr", qr: "data:image/png;base64,iVBORw0KGgo=" };
+        return state.whatsApp ?? now;
+      },
+      disconnect: async (orgId) => {
+        state.calls.push({ method: "whatsapp.disconnect", args: [orgId] });
+        if (state.whatsApp) state.whatsApp = { ...state.whatsApp, state: "off", qr: null, phone: null };
+      },
+    },
     mail: mail.client,
     databases: databases.client,
     dashboards: dashboards.client,

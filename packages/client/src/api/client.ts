@@ -380,6 +380,7 @@ import type {
   WaitingList,
   WebhookProvider,
   WebhookSetup,
+  WhatsAppStatus,
   WifiIphones,
   WifiPairing,
   WikiBulkFailed,
@@ -2298,6 +2299,13 @@ export interface ApiClient {
     /** An agent's access and rules per mailbox. */
     agent(orgId: string, agentId: string): Promise<AgentMailbox[]>;
     setAgent(orgId: string, agentId: string, accountId: string, input: AgentMailboxInput): Promise<AgentMailbox>;
+  };
+  /** The workspace's WhatsApp number for agents (ADR 0260): who manages connectors links it by a QR. */
+  whatsapp: {
+    status(orgId: string): Promise<WhatsAppStatus>;
+    /** Starts linking (the QR follows on the next reads) or reconnects a linked number. */
+    connect(orgId: string): Promise<WhatsAppStatus>;
+    disconnect(orgId: string): Promise<void>;
   };
   /** People's Postgres databases for agents (ADR 0039): read-only queries. */
   databases: {

@@ -103,6 +103,8 @@ export const BUILTIN_TOOLS: Record<string, string[]> = {
   "wiki:write": ["create_wiki_page", "update_wiki_page", "link_to_wiki"],
   "vault:read": ["vault_list"],
   "vault:write": ["vault_save", "vault_delete"],
+  "whatsapp:send": ["send_whatsapp"],
+  "whatsapp:read": ["read_whatsapp"],
   "setup:write": [
     "offer_connect_ai",
     "create_channel",
@@ -298,6 +300,15 @@ export const BUILTIN_TOOL_INFO: Record<string, { label: string; description: str
   vault_save: {
     label: "Save to the Vault",
     description: "Saves or updates contact details, a login's username or a description.",
+  },
+  send_whatsapp: {
+    label: "Send a WhatsApp message",
+    description:
+      "Sends a text from the workspace's linked WhatsApp number to a number or a group, after a person approves it.",
+  },
+  read_whatsapp: {
+    label: "Read WhatsApp groups",
+    description: "Lists the linked phone's groups and reads what one said lately, never a private chat.",
   },
   vault_delete: {
     label: "Delete from the Vault",

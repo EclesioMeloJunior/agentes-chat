@@ -8496,6 +8496,22 @@ export interface MailPreset {
   appPasswordUrl: string | null;
 }
 
+/**
+ * `GET …/whatsapp` (ADR 0260): the workspace's WhatsApp number, for who manages connectors. `available` false: this
+ * server has no WhatsApp service.
+ */
+export interface WhatsAppStatus {
+  available: boolean;
+  /** `qr`: waiting for the QR to be scanned; `closed`: linked but offline, reconnecting. */
+  state: "off" | "starting" | "qr" | "open" | "closed";
+  /** While `qr`: a PNG data URL. */
+  qr: string | null;
+  qrExpiresAt: string | null;
+  /** Digits with the country code, once linked. */
+  phone: string | null;
+  reason: string | null;
+}
+
 /** `GET …/mail/providers`: which ways in this server offers. */
 export interface MailProviders {
   /** Gmail and Outlook (through Composio). */

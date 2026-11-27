@@ -12,6 +12,7 @@ import type { RateLimiter } from "./rate-limiter";
 import type { SearchIndexResolver } from "./search";
 import type { VaultSources } from "./vault/source";
 import type { WebPushSender } from "./web-push";
+import type { WhatsAppGateway } from "./whatsapp";
 
 export * from "./blob";
 export * from "./blob-disk";
@@ -56,6 +57,7 @@ export { createOnePasswordSource } from "./vault/onepassword";
 export * from "./vault/site";
 export * from "./vault/source";
 export * from "./web-push";
+export * from "./whatsapp";
 
 /**
  * Infrastructure the core talks to through interfaces, so each edition can
@@ -99,4 +101,6 @@ export interface Adapters {
    * The built-in source is the engine's own. null/absent = only built-in items.
    */
   vaultSources?: VaultSources | null;
+  /** WhatsApp for agents (ADR 0260): the `whatsapp` service with `WHATSAPP_URL`; null/absent = no WhatsApp. */
+  whatsapp?: WhatsAppGateway | null;
 }

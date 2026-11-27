@@ -77,7 +77,7 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
-    networks: [default, speech, embeddings]
+    networks: [default, speech, embeddings, whatsapp]
     restart: unless-stopped
     # What the app may take from the machine it shares with Postgres (and the speech server). Over it, the kernel
     # stops this container alone and it restarts, instead of the machine swapping until something else is killed.
@@ -168,6 +168,37 @@ services:
       timeout: 5s
       retries: 3
       start_period: 600s
+    init: true
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    read_only: true
+    tmpfs:
+      - /tmp
+
+  whatsapp:
+    # A WhatsApp number for the agents (ADR 0260, deploy/whatsapp): zapo-js links each workspace's phone as a
+    # companion device, the way WhatsApp Web does, and the app asks it to send. On with whatsapp in COMPOSE_PROFILES
+    # and WHATSAPP_URL=http://whatsapp:8080 (with the same WHATSAPP_API_KEY in both): SELF_HOSTING.md, WhatsApp. The
+    # QR to scan is in Settings › Connectors. Each workspace's keys stay in its volume; its network reaches WhatsApp.
+    image: "${AGENTES_WHATSAPP_IMAGE:-ghcr.io/agentes-chat/whatsapp:latest}"
+    build: deploy/whatsapp
+    profiles: ["whatsapp"]
+    environment:
+      WHATSAPP_API_KEY: "${WHATSAPP_API_KEY:-}"
+    volumes:
+      - whatsapp-sessions:/data
+    networks: [whatsapp]
+    mem_limit: "${WHATSAPP_MEMORY:-512m}"
+    memswap_limit: "${WHATSAPP_MEMORY:-512m}"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:8080/health').then((r) => process.exit(r.ok ? 0 : 1), () => process.exit(1))"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
     init: true
     security_opt:
       - no-new-privileges:true
@@ -448,11 +479,14 @@ networks:
     internal: true
   # The embeddings service's: the app reaches it there, and it reaches the internet for its model.
   embeddings:
+  # The WhatsApp service's: the app reaches it there, and it reaches WhatsApp on the internet.
+  whatsapp:
 
 volumes:
   pgdata:
   files:
   speech-local:
   embeddings-models:
+  whatsapp-sessions:
   caddy-data:
   tailscale-state:

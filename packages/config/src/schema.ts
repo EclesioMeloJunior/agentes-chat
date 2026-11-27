@@ -31,6 +31,7 @@ export interface EnvVarDefinition {
     | "Email"
     | "Composio"
     | "Email for agents"
+    | "WhatsApp"
     | "Push"
     | "Operator"
     | "Chat surfaces"
@@ -1055,6 +1056,20 @@ export const envVars = {
     description:
       "Composio tool calls a workspace may make per calendar month (UTC), connectors and mailboxes together; at the cap its Composio tools stop until the next month and its admins are told. 0: no cap (a self-hosted server pays its own Composio project).",
     section: "Composio",
+  },
+  WHATSAPP_URL: {
+    schema: z.url().optional(),
+    description:
+      "The WhatsApp service (ADR 0260): the compose file's `whatsapp` profile, at `http://whatsapp:8080`. With it, each workspace links a phone by its QR in Settings › Connectors, and agents granted Send WhatsApp messages send from that number, each message approved by a person unless the agent never asks. Without it: no WhatsApp.",
+    section: "WhatsApp",
+    example: "http://whatsapp:8080",
+  },
+  WHATSAPP_API_KEY: {
+    schema: z.string().min(16).optional(),
+    description:
+      "The token that WhatsApp service asks for (sent as `Authorization: Bearer`): the same value in its `WHATSAPP_API_KEY`. Make one with `openssl rand -hex 32`.",
+    section: "WhatsApp",
+    secret: true,
   },
   MAIL_IMAP_ENABLED: {
     schema: z.stringbool().default(true),

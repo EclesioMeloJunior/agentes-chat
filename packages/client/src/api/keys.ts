@@ -257,6 +257,8 @@ export const keys = {
   taskManager: (orgId: string) => ["org", orgId, "task-manager"] as const,
   taskSteps: (orgId: string, runId: string) => ["org", orgId, "task-manager", "steps", runId] as const,
   reminders: (orgId: string) => ["org", orgId, "reminders"] as const,
+  /** The workspace's WhatsApp number (ADR 0260). */
+  whatsapp: (orgId: string) => ["org", orgId, "whatsapp"] as const,
   /** Every mailbox read (prefix). */
   mail: (orgId: string) => ["org", orgId, "mail"] as const,
   mailProviders: (orgId: string) => ["org", orgId, "mail", "providers"] as const,

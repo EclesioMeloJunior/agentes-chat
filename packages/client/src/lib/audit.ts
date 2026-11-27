@@ -297,6 +297,7 @@ const AREAS = [
   "invitation",
   "credential",
   "vault",
+  "whatsapp",
 ] as const;
 
 /** What a call or a change didn't go through with, in the tool's own words (often English): the technical part's. */
