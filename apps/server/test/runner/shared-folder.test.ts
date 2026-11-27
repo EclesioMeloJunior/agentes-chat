@@ -7,6 +7,7 @@ import { allowedFor, foldersFor } from "../../runner/access";
 import { lookFiles } from "../../runner/desktop-look";
 import type { RunCommand } from "../../runner/service";
 import {
+  addSharedBin,
   duGb,
   ensureSingleShared,
   ensureSystemShared,
@@ -181,4 +182,21 @@ test("the owner's fix: a moved-in folder gets setgid and the group's rwx, a 644 
   expect(mode("render") & 0o2070).toBe(0o2070);
   expect(mode("render/cut.mp4") & 0o060).toBe(0o060);
   expect(mode("run.sh") & 0o070).toBe(0o070);
+});
+
+test("addSharedBin keeps Windows' own PATH key: Task Scheduler's Path, never a second PATH with the shared bin alone", () => {
+  const shared = path.join("agentes", "shared");
+  const bin = path.join(shared, "bin");
+  const windows: NodeJS.ProcessEnv = { Path: path.join("Users", "me", ".local", "bin") };
+  addSharedBin(windows, shared, "win32");
+  expect(windows.PATH).toBeUndefined();
+  expect(windows.Path).toBe([path.join("Users", "me", ".local", "bin"), bin].join(path.delimiter));
+
+  const elsewhere: NodeJS.ProcessEnv = { PATH: "/usr/bin" };
+  addSharedBin(elsewhere, shared, "linux");
+  expect(elsewhere.PATH).toBe(["/usr/bin", bin].join(path.delimiter));
+
+  const none: NodeJS.ProcessEnv = { Path: "C:\tools" };
+  addSharedBin(none, null, "win32");
+  expect(none).toEqual({ Path: "C:\tools" });
 });

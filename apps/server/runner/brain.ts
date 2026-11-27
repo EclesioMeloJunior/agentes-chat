@@ -106,7 +106,7 @@ import { isInside, resolveForAgent } from "./paths";
 import { resetIso } from "./plan-usage";
 import { claudeAtLeast, REPO_PLUGIN_MIN_CLAUDE, repoPlugin, repoPluginPrint } from "./repo-plugin";
 import type { Spawn } from "./scope-gate";
-import { withSharedBin } from "./shared-folder";
+import { addSharedBin } from "./shared-folder";
 import { claudeSessionExists, claudeSessionFile, type TaskSecrets, WRONG_SESSION_FLAG } from "./tasks";
 
 /**
@@ -2066,7 +2066,7 @@ export interface BrainManagerOptions {
   claudeVersion?: () => string | null | undefined;
   /**
    * Single-user mode's shared folder (ADR 0115; null in system mode or without one): its `bin/` goes at the end of
-   * the CLI's PATH, so the agent's subagents find by name what the agent installed there (`withSharedBin`).
+   * the CLI's PATH, so the agent's subagents find by name what the agent installed there (`addSharedBin`).
    */
   sharedFolder?: () => string | null | undefined;
   /** How Claude Code starts (a worker under systemd: in the agent's AI CLIs slice, `scope-gate.ts`). */
@@ -3214,11 +3214,8 @@ export class BrainManager {
         ? accountEnv("claude_code", ctx.accountHome, base)
         : base;
     // The tools the agents installed in the shared folder, for every process of its own: its subagents never read
-    // where that folder is (single-user mode only, `withSharedBin`).
-    if (!launched) {
-      const withShared = withSharedBin(env.PATH, this.opts.sharedFolder?.());
-      if (withShared) env.PATH = withShared;
-    }
+    // where that folder is (single-user mode only, `addSharedBin`: under the PATH key the env has, `Path` on Windows).
+    if (!launched) addSharedBin(env, this.opts.sharedFolder?.());
     const keyPlan = ctx.planKey ? planOf(ctx.planKey.provider) : undefined;
     const plan = keyPlan && planForTurn(keyPlan, req.model);
     if (plan && ctx.planKey) env[plan.claudeCode.tokenEnv] = ctx.planKey.key;
