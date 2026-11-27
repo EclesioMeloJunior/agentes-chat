@@ -1,5 +1,5 @@
 /**
- * The `whatsapp` service of docker-compose.yml (ADR 0261). `WHATSAPP_API_KEY`: the token the app sends, the same in
+ * The `whatsapp` service of docker-compose.yml (ADR 0262). `WHATSAPP_API_KEY`: the token the app sends, the same in
  * both; `WHATSAPP_DATA`: where the sessions' keys are kept (a volume); `PORT`: 8080.
  */
 import { mkdirSync } from "node:fs";

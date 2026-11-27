@@ -1,5 +1,5 @@
 /**
- * WhatsApp for agents (ADR 0261) behind one interface: the core asks a service of its own (deploy/whatsapp, on
+ * WhatsApp for agents (ADR 0262) behind one interface: the core asks a service of its own (deploy/whatsapp, on
  * zapo-js) about a workspace's session, its QR, a send (to a number or a group), its groups, what a group said lately
  * and a logout. Each workspace is one session, named by its id. Off unless `WHATSAPP_URL` is set.
  */
@@ -46,7 +46,7 @@ export interface WhatsAppGroupRead {
   since: string;
 }
 
-/** A picture to send (ADR 0261, pictures): the service takes a JPEG or PNG up to `WHATSAPP_PICTURE_MAX`. */
+/** A picture to send (ADR 0262, pictures): the service takes a JPEG or PNG up to `WHATSAPP_PICTURE_MAX`. */
 export interface WhatsAppPicture {
   bytes: Uint8Array;
   contentType: "image/jpeg" | "image/png";

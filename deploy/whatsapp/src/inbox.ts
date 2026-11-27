@@ -1,5 +1,5 @@
 /**
- * What the groups of a linked phone said lately (ADR 0261, addendum of 2026-11-27): a short window kept in memory
+ * What the groups of a linked phone said lately (ADR 0262, addendum of 2026-11-27): a short window kept in memory
  * only, per session and per group, so an agent with `whatsapp:read` can read a group and a routine can watch one.
  * Nothing goes to disk, so a restart forgets it; private chats are never kept, only groups.
  */

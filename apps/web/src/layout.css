@@ -5791,7 +5791,7 @@ html:not([data-pointer]) .catalog-tile:focus-visible {
 }
 
 /*
- * Settings → Conectores → WhatsApp (ADR 0261): the GitHub panel's layout, and while it waits the QR beside how to scan
+ * Settings → Conectores → WhatsApp (ADR 0262): the GitHub panel's layout, and while it waits the QR beside how to scan
  * it, under it on a phone. The code keeps its white quiet zone in dark mode, which a camera needs.
  */
 .wa-panel__scan {

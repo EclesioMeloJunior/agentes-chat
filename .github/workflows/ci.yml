@@ -258,7 +258,7 @@ jobs:
       - name: Speech server
         if: success() || failure()
         run: python3 -m unittest discover -s deploy/speech
-      # Its HTTP side with fake sessions (ADR 0261): the key, the routes' shapes, numbers, a send while unlinked.
+      # Its HTTP side with fake sessions (ADR 0262): the key, the routes' shapes, numbers, a send while unlinked.
       - name: WhatsApp service
         if: success() || failure()
         run: bun test ./deploy/whatsapp/src
@@ -608,7 +608,7 @@ jobs:
   # ship on the same tags, so the standalone compose file needs no build context. The speech image has no
   # layer cache: its models (about 700 MB) would crowd the app's layers out of the repository's cache
   # quota. It is optional like its service: a build that fails (its models come from Hugging Face)
-  # publishes the app without it. The WhatsApp service's image (ADR 0261) ships on the same tags and is
+  # publishes the app without it. The WhatsApp service's image (ADR 0262) ships on the same tags and is
   # optional the same way: its packages come from npm.
   #
   # Each platform builds on its own native runner (Bun under QEMU emulation is slow and fragile) and

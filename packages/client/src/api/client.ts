@@ -2300,7 +2300,7 @@ export interface ApiClient {
     agent(orgId: string, agentId: string): Promise<AgentMailbox[]>;
     setAgent(orgId: string, agentId: string, accountId: string, input: AgentMailboxInput): Promise<AgentMailbox>;
   };
-  /** The workspace's WhatsApp number for agents (ADR 0261): who manages connectors links it by a QR. */
+  /** The workspace's WhatsApp number for agents (ADR 0262): who manages connectors links it by a QR. */
   whatsapp: {
     status(orgId: string): Promise<WhatsAppStatus>;
     /** Starts linking (the QR follows on the next reads) or reconnects a linked number. */

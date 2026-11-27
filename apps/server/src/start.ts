@@ -338,7 +338,7 @@ async function boot(
         source,
       ]),
     ),
-    // WhatsApp for agents (ADR 0261): only with the `whatsapp` service's address; each workspace links its own phone.
+    // WhatsApp for agents (ADR 0262): only with the `whatsapp` service's address; each workspace links its own phone.
     whatsapp: config.WHATSAPP_URL
       ? createHttpWhatsApp({ url: config.WHATSAPP_URL, apiKey: config.WHATSAPP_API_KEY })
       : null,

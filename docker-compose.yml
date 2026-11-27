@@ -180,7 +180,7 @@ services:
       - /tmp
 
   whatsapp:
-    # A WhatsApp number for the agents (ADR 0261, deploy/whatsapp): zapo-js links each workspace's phone as a
+    # A WhatsApp number for the agents (ADR 0262, deploy/whatsapp): zapo-js links each workspace's phone as a
     # companion device, the way WhatsApp Web does, and the app asks it to send. On with whatsapp in COMPOSE_PROFILES
     # and WHATSAPP_URL=http://whatsapp:8080 (with the same WHATSAPP_API_KEY in both): SELF_HOSTING.md, WhatsApp. The
     # QR to scan is in Settings › Connectors. Each workspace's keys stay in its volume; its network reaches WhatsApp.

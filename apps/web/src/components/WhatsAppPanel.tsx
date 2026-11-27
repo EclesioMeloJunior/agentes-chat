@@ -7,7 +7,7 @@ import { useTranslation } from "react-i18next";
 import { useOrg } from "@/components/org-context";
 
 /*
- * The workspace's WhatsApp number for agents (ADR 0261), in Settings › Connectors for who manages connectors, only
+ * The workspace's WhatsApp number for agents (ADR 0262), in Settings › Connectors for who manages connectors, only
  * where the server has the WhatsApp service: whether a phone is linked and which, or the QR to link one, read again
  * every 2 s while it waits (`useWhatsApp`).
  */
