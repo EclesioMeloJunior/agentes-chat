@@ -344,8 +344,9 @@ test("only the computer's Google Chrome is driven, at its standard path on each 
   expect(chromeVersion(path.join(home, "missing"), "linux")).toBeNull();
   // On every launch: nothing updating Chrome's components and no updater started by our Chrome, pages asked to hold
   // still (`prefers-reduced-motion`), no chip asking to sign in to Chrome itself, and the sites' sessions kept across
-  // its restarts.
+  // its restarts. Never a sound on the computer's speakers.
   expect(CHROME_ARGS).toEqual([
+    "--mute-audio",
     "--no-first-run",
     "--no-default-browser-check",
     "--disable-blink-features=AutomationControlled",

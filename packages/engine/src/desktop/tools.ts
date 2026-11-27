@@ -11,15 +11,17 @@ import { handedBackSince, markPageRead, requirePageRead, waitIfPersonInControl }
 import { agentFolderPath, MAX_PAGE_TEXT, MAX_PLAN_STEPS } from "../browser/tools";
 import { DESKTOP_SCOPE, DESKTOP_TOOL_INFO } from "../browser/types";
 import { ToolOffError } from "../errors";
-import type { Judge } from "../judge";
+import type { Judge, JudgeReach } from "../judge";
 import { callWhenBack, type MachineCaller, MachineRequestError } from "../machine-hub";
 import { MachineOfflineError, MachinePausedError } from "../machines";
 import { machineScope, screenKey } from "../right-hand-seats";
 import { codeRunning, RUN_CODE_TOOL, SandboxUnavailableError } from "../sandbox";
 import {
   actsBeforeOpening,
+  byReach,
   createLookMemory,
   createTargetCache,
+  desktopWording,
   FRESH_LOOK_MS,
   findInPage,
   formatPlanReport,
@@ -30,6 +32,7 @@ import {
   type ScreenJudgmentShadow,
   type ScreenStep,
   type ScreenVerb,
+  type ScreenWording,
   screenJudgmentsData,
   screenStepOf,
   type TargetCache,
@@ -56,6 +59,8 @@ export interface DesktopToolDeps {
   pubsub?: PubSub;
   /** Targets in words, checks and finds on the screen (ADR 0054), as for the browser. */
   judge?: Judge;
+  /** What judges for a workspace now: the tools' descriptions follow it (`desktopWording`), as the browser's do. */
+  judgeReach?: (orgId: string) => Promise<JudgeReach> | JudgeReach;
   /**
    * Whether the judge sees images now (Jev's vision model): a target the screen's text lacks is looked for on a
    * screenshot. Asked on each call, since the installation's Jev key can come and go.
@@ -93,20 +98,13 @@ const VERBS: readonly ScreenVerb[] = [
   "read",
 ];
 
-const targetProp = {
-  type: "string",
-  description:
-    "What to act on: its number from the screen (`e7`) or plain words (`the Save button`, `the File menu`, `Documents in the file list`). For something that can't be undone (delete, discard, overwrite), give its number.",
-  maxLength: 500,
-} as const;
-
-/** One step of `desktop_do`. */
-const STEP_SCHEMA: JsonSchema = {
+/** One step of `desktop_do`, worded by what judges for the workspace. */
+const stepSchema = (w: ScreenWording): JsonSchema => ({
   type: "object",
   properties: {
     do: { type: "string", enum: [...VERBS] },
-    target: targetProp,
-    to: { ...targetProp, description: "`drag`: where to drop it, as a number or in words like `target`." },
+    target: { type: "string", description: w.target, maxLength: 500 },
+    to: { type: "string", description: "`drag`: where to drop it, written like `target`.", maxLength: 500 },
     app: {
       type: "string",
       description: "`open`: an app by its name (`Files`, `Terminal`, `Text Editor`).",
@@ -132,28 +130,14 @@ const STEP_SCHEMA: JsonSchema = {
     },
     direction: { type: "string", enum: ["up", "down", "left", "right"] },
     pixels: { type: "integer", minimum: 50, maximum: 10_000 },
-    until: {
-      type: "string",
-      description: "`wait`: until this is true on the screen, in words (`the download finished`).",
-      maxLength: 500,
-    },
+    until: { type: "string", description: w.until, maxLength: 500 },
     seconds: { type: "integer", minimum: 1, maximum: MAX_WAIT_SECONDS, description: "`wait`: at most this long." },
-    find: {
-      type: "string",
-      description:
-        "`read`: what to get from the screen (`the command's output`, `the error message`): only the lines that answer it.",
-      maxLength: 500,
-    },
-    expect: {
-      type: "string",
-      description:
-        "After this step the screen should show this (`a folder reports in Documents`, `the file is saved`). It is checked; the plan stops there when it isn't true.",
-      maxLength: 500,
-    },
+    find: { type: "string", description: w.find, maxLength: 500 },
+    expect: { type: "string", description: w.expect, maxLength: 500 },
   },
   required: ["do"],
   additionalProperties: false,
-};
+});
 
 /** A step that opens a web address: the browser's work, refused before anything runs. */
 const opensWebPage = (s: ScreenStep) =>
@@ -162,7 +146,7 @@ const opensWebPage = (s: ScreenStep) =>
   !s.path?.trim() &&
   (s.url !== undefined || /^\s*[a-z][\w+.-]*:\/\//i.test(s.target ?? ""));
 
-/** Without a judge, words can't be matched: only numbers and exact names work. */
+/** Without a judge nothing weighs words: targets are numbers or names, finds and checks words on the screen. */
 const NO_JUDGE: Judge = {
   name: "none",
   ask() {
@@ -436,13 +420,14 @@ export function createDesktopToolSource(deps: DesktopToolDeps): ToolSource {
   const changes =
     "Each step waits for the screen to settle, and the answer says what changed on it (or, in another app or dialog, what you can act on there), so you rarely need to read the screen again.";
 
-  const definitions: ToolDefinition[] = [
+  /** The tools, worded by what judges for the workspace (`desktopWording`): the same tools either way. */
+  const define = (w: ScreenWording): ToolDefinition[] => [
     tool(
       "desktop_do",
-      `${DESKTOP_TOOL_INFO.desktop_do.description} For apps with no API or web version (native apps, file and system dialogs, a terminal window); web pages go to browser_do, and commands to run_code. Write the whole task as \`steps\` in one call, from the \`open\` (an app by its name, or a file) to the last click, the way you'd do it by hand: name each target in words (\`the File menu\`, \`Save\`) or by its number, and it is found on the screen as it is at that step. Give \`expect\` on steps whose result matters: it's checked, and the plan stops at the first step that fails or doesn't show it, saying why and what's on the screen then. A dialog in the way is never closed for you: the plan stops and names it, and you decide. ${changes}`,
+      `${DESKTOP_TOOL_INFO.desktop_do.description} For apps with no API or web version (native apps, file and system dialogs, a terminal window); web pages go to browser_do, and commands to run_code. Write the whole task as \`steps\` in one call, from the \`open\` (an app by its name, or a file) to the last click, the way you'd do it by hand: ${w.plan} A dialog in the way is never closed for you: the plan stops and names it, and you decide. ${changes}`,
       {
         type: "object",
-        properties: { steps: { type: "array", minItems: 1, maxItems: MAX_PLAN_STEPS, items: STEP_SCHEMA } },
+        properties: { steps: { type: "array", minItems: 1, maxItems: MAX_PLAN_STEPS, items: stepSchema(w) } },
         required: ["steps"],
         additionalProperties: false,
       },
@@ -463,16 +448,10 @@ export function createDesktopToolSource(deps: DesktopToolDeps): ToolSource {
     ),
     tool(
       "desktop_read",
-      `${DESKTOP_TOOL_INFO.desktop_read.description} The windows in front, their menus, buttons and fields, and the text of terminals and fields; windows behind are one line each. Act on an element by its number (\`e7\`) or name it in words. To get one thing (a command's output, a status, an error), say it in \`find\`: you get just the lines that answer it.`,
+      `${DESKTOP_TOOL_INFO.desktop_read.description} The windows in front, their menus, buttons and fields, and the text of terminals and fields; windows behind are one line each. ${w.read}`,
       {
         type: "object",
-        properties: {
-          find: {
-            type: "string",
-            description: "What you're looking for (`the last command's output`, `whether the export finished`).",
-            maxLength: 500,
-          },
-        },
+        properties: { find: { type: "string", description: w.readFind, maxLength: 500 } },
         additionalProperties: false,
       },
       async (input, ctx) => {
@@ -488,7 +467,10 @@ export function createDesktopToolSource(deps: DesktopToolDeps): ToolSource {
         seen.remember(await seenKey(ctx), screen);
         await markPageRead(ctx.db, ctx, "desktop");
         const question = typeof input.find === "string" ? input.find.trim() : "";
-        if (question && deps.judge) {
+        const head = `Now in ${look.address}${look.title ? ` — ${look.title}` : ""}`;
+        // No line has the question's words and no model picks any: the whole screen, said as that.
+        let unfound = "";
+        if (question) {
           const shadow: ScreenJudgmentShadow[] = [];
           const found = await findInPage({
             judge,
@@ -502,22 +484,28 @@ export function createDesktopToolSource(deps: DesktopToolDeps): ToolSource {
           const part = found?.searched
             ? ` (searched ${found.searched.lines} of the screen's ${found.searched.of} lines)`
             : "";
-          if (found && found.answered !== "no") {
+          if (found?.unjudged) {
+            if (found.answered !== "no") {
+              return {
+                content: `No model picks the lines that answer "${question}" on this server. The lines of the screen with the most of its words (… marks what is left out); read the whole screen (no \`find\`) if they aren't it:\n${screenBlock(found.text)}`,
+              };
+            }
+            unfound = `No line of the screen has the words of "${question}", and no model picks the lines that answer it on this server. The whole screen:\n`;
+          } else if (found && found.answered !== "no") {
             const partly = found.answered === "partly" ? " (it may only partly answer it)" : "";
             return {
               content: `Where the screen answers "${question}"${partly}${part}:\n${screenBlock(found.text)}`,
               data: screenJudgmentsData(shadow),
             };
           }
-          if (found) {
+          if (found && !found.unjudged) {
             return {
               content: `Nothing on the screen answers "${question}"${part}. Read the whole screen (no \`find\`) to look yourself, or open where it would be.`,
               data: screenJudgmentsData(shadow),
             };
           }
         }
-        const head = `Now in ${look.address}${look.title ? ` — ${look.title}` : ""}`;
-        return { content: screenBlock(`${head}\n${look.snapshot.trim() || "(nothing on the screen)"}`) };
+        return { content: `${unfound}${screenBlock(`${head}\n${look.snapshot.trim() || "(nothing on the screen)"}`)}` };
       },
     ),
     tool(
@@ -565,6 +553,9 @@ export function createDesktopToolSource(deps: DesktopToolDeps): ToolSource {
       },
     ),
   ];
+  const defined = byReach((reach) => define(desktopWording(reach)));
+  /** The tools as this source words them when nothing says otherwise: who may use them never depends on the words. */
+  const definitions = defined(deps.judge ? "calibrated" : "none");
 
   return {
     name: "desktop",
@@ -577,10 +568,9 @@ export function createDesktopToolSource(deps: DesktopToolDeps): ToolSource {
       const gate = await gateOf(ctx, granted);
       if ("refused" in gate) return [];
       if (!(await agentDesktopUseStatus(ctx.db, hub, ctx.orgId, ctx.agentId)).available) return [];
+      const worded = deps.judgeReach ? defined(await deps.judgeReach(ctx.orgId)) : definitions;
       // Where every command asks a person first, so does driving the desktop.
-      return gate.approvals
-        ? definitions.map((t) => (t.name === "desktop_do" ? { ...t, sensitive: true } : t))
-        : definitions;
+      return gate.approvals ? worded.map((t) => (t.name === "desktop_do" ? { ...t, sensitive: true } : t)) : worded;
     },
   };
 }

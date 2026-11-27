@@ -271,6 +271,22 @@ A click on something that opens a new window (`window.open`: a "Continue with Go
 - The counter is attached once Chrome told of the targets it has and answered for each: a first command still waits for that.
 - The same click now takes 0.8 s.
 
+### 21. A page's dialogs are answered on the runner's connection (2026-11-26)
+
+An agent's browser stopped answering for good after a page asked "Leave site?": every command after it ended in "The browser didn't answer", and only closing that Chrome brought it back. A page's own dialog (`alert`, `confirm`, `prompt`, and the `beforeunload` one) stops the page until it is answered, and nobody answered. Measured with `agent-browser` 0.42.0 attached over `--cdp`: it leaves a `beforeunload` dialog and an `alert` open, so the navigation or click that opened one never returns; with a `confirm` open, a command that reads the page (`get url`) hangs, and a `dialog status` sent after it waited 24 s behind it in the daemon's queue, while the commands the daemon answers by itself still do (`stream status` 55 ms, `tab` 68 ms, `stream enable` 46 ms, `dialog accept` 30 ms).
+
+- The runner's own connection to each Chrome (section 20) enables `Page` on every tab it attaches to and answers the dialogs there (`apps/server/runner/page-dialogs.ts`), whatever the daemon is doing.
+- "Leave site?" is accepted at once and said to nobody: the navigation was the agent's own.
+- An `alert` is accepted at once, and its words go to the agent with its next answer.
+- A `confirm` or a `prompt` is the agent's to answer. While one waits, every command but `dialog` and `close` answers with its question (code `page_dialog`) before anything is sent to the page; a command it opened under is given 1.5 s to answer by itself and then stops waiting. The agent answers with `browser_dialog` (`accept`, and `text` for a prompt), which goes as `dialog accept [text]` or `dialog dismiss` and is taken on the runner's connection. With no box waiting there, the command goes to `agent-browser` as given.
+- A box left without an answer for 60 s is dismissed, and the agent is told with its next answer. A browser never stays held by a question.
+- The commands the daemon answers without the page (`stream`, `tab`, `dialog`, `close`) are neither refused nor cut, so the reachability check and the live view go on while a box waits. `close` dismisses the box first.
+- What the runner closed by itself travels as an optional `dialogs` list on the `browser.act` and `browser.batch` replies (kind, words, host, whether it expired; the last five). No protocol version: an older server ignores the field, and an older runner sends none.
+- A dialog's words are the page's: they reach the agent as data, markers removed, on one line. The failure's words name nothing a plan retries on.
+- `browser_dialog` acts on the page, so an agent that always asks is asked before it answers. An approval that takes longer than the 60 s finds the box already dismissed: the agent then does the step again.
+
+On the same pages afterwards: opening another address over a page that asks "Leave site?" takes 0.13 s; a click that opens a `confirm` answers with its question in 1.8 s, and the answer to it takes 3 ms.
+
 ## Order
 
 First version: stages 0–7. Difficulty: **easy** (known pattern, little risk), **medium** (new pieces on known patterns).

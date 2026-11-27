@@ -15046,6 +15046,7 @@ export const ptBR = {
       browser_wait: "Esperar a página",
       browser_wait_for: "Esperar a página",
       browser_tabs: "Trocar de aba",
+      browser_dialog: "Responder a um aviso da página",
       browser_close: "Fechar o navegador",
       browser_upload: "Enviar arquivo",
       browser_file_upload: "Enviar arquivo",
@@ -19811,6 +19812,10 @@ export const ptBR = {
       label: "Abas do navegador",
       description: "Lista, abre, troca ou fecha abas.",
     },
+    browser_dialog: {
+      label: "Responder a um aviso da página",
+      description: "Responde a uma caixa de confirmação ou de texto que a página abriu: OK ou Cancelar.",
+    },
     browser_read: {
       label: "Ler a página",
       description: "Lê a página como texto, com um número para cada botão, campo e link.",
@@ -20248,6 +20253,7 @@ export const ptBR = {
         browser_open_plain: "Abriu uma página",
         browser_back: "Voltou uma página",
         browser_tabs: "Mexeu nas abas",
+        browser_dialog: "Respondeu a um aviso da página",
         browser_read: "Leu a página",
         browser_click: "Clicou",
         browser_fill: "Preencheu um campo",

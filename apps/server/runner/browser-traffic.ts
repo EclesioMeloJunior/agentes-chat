@@ -1,5 +1,6 @@
 import { BROWSER_DEVICE_SIZES, type BrowserViewport, isObject } from "@agenteschat/adapters/machine-protocol";
 import type { StreamSocket } from "./browser";
+import { type PageDialogs, pageDialogs } from "./page-dialogs";
 import { urlCarries } from "./vault";
 
 /**
@@ -119,6 +120,8 @@ export interface TrafficCounter {
    * Null ends it on every tab.
    */
   emulate(commands: CdpCommand[] | null): void;
+  /** The tabs' own dialogs (`alert`, `confirm`, `prompt`, "Leave site?"), answered on this connection. */
+  dialogs: PageDialogs;
   close(): void;
 }
 
@@ -293,6 +296,7 @@ export function countChromeTraffic(
       }),
     show: (url) => send("Page.navigate", { url }, sessionId),
   });
+  const dialogs = pageDialogs((method, params, sessionId, ack) => send(method, params, sessionId, undefined, ack));
   let first = 0;
   /** Chrome answered `first`: it has told of every target it had then. */
   let discovered = false;
@@ -432,6 +436,8 @@ export function countChromeTraffic(
             typeof target.openerId === "string" && target.openerId !== "" && target.canAccessOpener !== false,
           );
           for (const c of emulation ?? []) send(c.method, c.params, p.sessionId);
+          // Only a session that had `Page` on when a dialog opened may answer it (`page-dialogs.ts`).
+          send("Page.enable", {}, p.sessionId);
         }
         if (target.type === "worker") workers.add(p.sessionId);
         send("Network.enable", NETWORK, p.sessionId);
@@ -466,8 +472,15 @@ export function countChromeTraffic(
           pages.delete(p.sessionId);
           workers.delete(p.sessionId);
           fetchStates.delete(p.sessionId);
+          dialogs.closed(p.sessionId);
           if (closed) onPageClosed?.(closed);
         }
+        return;
+      case "Page.javascriptDialogOpening":
+        if (pages.has(sessionId)) dialogs.opened(sessionId, p);
+        return;
+      case "Page.javascriptDialogClosed":
+        dialogs.closed(sessionId);
         return;
       case "Inspector.targetCrashed": {
         const targetId = pages.get(sessionId);
@@ -522,6 +535,7 @@ export function countChromeTraffic(
       for (const waiter of [...closeWaiters]) waiter();
       closeWaiters.clear();
       fetchStates.clear();
+      dialogs.clear();
       sessions.clear();
       pages.clear();
       answers.clear();
@@ -569,6 +583,7 @@ export function countChromeTraffic(
       emulation = commands;
       for (const id of pages.keys()) for (const c of commands ?? CLEAR_EMULATION) send(c.method, c.params, id);
     },
+    dialogs,
     close() {
       try {
         socket?.close();

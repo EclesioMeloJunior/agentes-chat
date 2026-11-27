@@ -14763,6 +14763,7 @@
       "browser_wait": "Op de pagina wachten",
       "browser_wait_for": "Op de pagina wachten",
       "browser_tabs": "Van tabblad wisselen",
+      "browser_dialog": "Dialoog van de pagina beantwoorden",
       "browser_close": "Browser sluiten",
       "browser_upload": "Bestand uploaden",
       "browser_file_upload": "Bestand uploaden",
@@ -19398,6 +19399,10 @@
       "label": "Browsertabbladen",
       "description": "Toont, opent, wisselt of sluit tabbladen."
     },
+    "browser_dialog": {
+      "label": "Dialoog van de pagina beantwoorden",
+      "description": "Beantwoordt een bevestigings- of invoervenster dat een pagina heeft geopend: OK of Annuleren."
+    },
     "browser_read": {
       "label": "Pagina lezen",
       "description": "Leest de pagina als tekst, met een nummer voor elke knop, elk veld en elke link."
@@ -19831,6 +19836,7 @@
         "browser_open_plain": "Een pagina geopend",
         "browser_back": "Een pagina teruggegaan",
         "browser_tabs": "Van tabblad gewisseld",
+        "browser_dialog": "Dialoog van de pagina beantwoord",
         "browser_read": "De pagina gelezen",
         "browser_click": "Geklikt",
         "browser_fill": "Een veld ingevuld",

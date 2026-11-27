@@ -14624,6 +14624,7 @@
       "browser_wait": "Sayfayı bekle",
       "browser_wait_for": "Sayfayı bekle",
       "browser_tabs": "Sekme değiştir",
+      "browser_dialog": "Sayfa iletişim kutusunu yanıtla",
       "browser_close": "Tarayıcıyı kapat",
       "browser_upload": "Dosya yükle",
       "browser_file_upload": "Dosya yükle",
@@ -19247,6 +19248,10 @@
       "label": "Tarayıcı sekmeleri",
       "description": "Sekmeleri listeler, açar, değiştirir veya kapatır."
     },
+    "browser_dialog": {
+      "label": "Sayfa iletişim kutusunu yanıtla",
+      "description": "Sayfanın açtığı onay veya metin kutusunu yanıtlar: Tamam veya İptal."
+    },
     "browser_read": {
       "label": "Sayfayı oku",
       "description": "Sayfayı metin olarak okur, her düğme, alan ve bağlantı için bir numarayla."
@@ -19633,6 +19638,7 @@
         "browser_open_plain": "Bir sayfa açtı",
         "browser_back": "Bir sayfa geri gitti",
         "browser_tabs": "Sekme değiştirdi",
+        "browser_dialog": "Sayfa iletişim kutusunu yanıtladı",
         "browser_read": "Sayfayı okudu",
         "browser_click": "Tıkladı",
         "browser_fill": "Bir alanı doldurdu",

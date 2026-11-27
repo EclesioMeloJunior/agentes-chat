@@ -101,6 +101,8 @@ test("one socket to the browser endpoint: each target attached as Chrome tells o
   cdp.attach("worker-1", "worker");
   const network = { maxPostDataSize: 1, maxResourceBufferSize: 1, maxTotalBufferSize: 1 };
   expect(cdp.sent.slice(1).map(({ method, params, sessionId }) => ({ method, params, sessionId }))).toEqual([
+    // A tab alone gets `Page`: the session that answers its dialogs.
+    { method: "Page.enable", params: {}, sessionId: "page-1" },
     { method: "Network.enable", params: network, sessionId: "page-1" },
     { method: "Target.setAutoAttach", params: RELATED, sessionId: "page-1" },
     { method: "Network.enable", params: network, sessionId: "frame-1" },
@@ -110,7 +112,7 @@ test("one socket to the browser endpoint: each target attached as Chrome tells o
   ]);
   // It never resumes or pauses a target, and asks for nothing else.
   expect(new Set(cdp.sent.map((m) => m.method))).toEqual(
-    new Set(["Target.setDiscoverTargets", "Target.setAutoAttach", "Network.enable"]),
+    new Set(["Target.setDiscoverTargets", "Target.setAutoAttach", "Network.enable", "Page.enable"]),
   );
   // Auto-attach only under a target: at the browser's level it holds the release of a press that opens a window.
   expect(cdp.sent.every((m) => m.method !== "Target.setAutoAttach" || m.sessionId)).toBe(true);
@@ -536,4 +538,55 @@ test("a phone is mobile with touch and Chrome on Android of the same version; a 
   // Chrome's version unknown: the size and touch, never a made-up version.
   const unknown = emulationCommands({ device: "phone", width: 390, height: 844 }, null);
   expect(unknown[2]).toEqual({ method: "Emulation.setUserAgentOverride", params: { userAgent: "" } });
+});
+
+test("a tab's dialogs are answered on this connection: leaving and an alert at once, a confirm when the agent says", async () => {
+  const { c, cdp } = counter();
+  cdp.onopen?.();
+  cdp.attach("page-1");
+  cdp.event(
+    "Target.attachedToTarget",
+    { sessionId: "frame-1", targetInfo: { type: "iframe" }, waitingForDebugger: false },
+    "page-1",
+  );
+  const handled = () =>
+    cdp.sent
+      .filter((m) => m.method === "Page.handleJavaScriptDialog")
+      .map(({ params, sessionId }) => ({ params, sessionId }));
+  const opening = (type: string, message: string, sessionId = "page-1") =>
+    cdp.event(
+      "Page.javascriptDialogOpening",
+      { type, message, url: "https://shop.example.com/cart", defaultPrompt: "", hasBrowserHandler: false },
+      sessionId,
+    );
+  opening("beforeunload", "");
+  opening("alert", "Saved");
+  expect(handled()).toEqual([
+    { params: { accept: true }, sessionId: "page-1" },
+    { params: { accept: true }, sessionId: "page-1" },
+  ]);
+  expect(c.dialogs.open()).toBeNull();
+  expect(c.dialogs.take()).toEqual([{ kind: "alert", message: "Saved", host: "shop.example.com" }]);
+  // A frame's session never had `Page` on here: its dialog is its tab's to tell.
+  opening("confirm", "Delete?", "frame-1");
+  expect(c.dialogs.open()).toBeNull();
+  opening("confirm", "Delete the cart?");
+  expect(c.dialogs.open()).toMatchObject({ kind: "confirm", message: "Delete the cart?", host: "shop.example.com" });
+  expect(handled()).toHaveLength(2);
+  const answered = c.dialogs.answer(false);
+  const sent = cdp.sent.at(-1);
+  expect(sent).toMatchObject({ method: "Page.handleJavaScriptDialog", params: { accept: false }, sessionId: "page-1" });
+  cdp.reply(sent?.id ?? 0);
+  expect(await answered).toBe(true);
+  cdp.event("Page.javascriptDialogClosed", { result: false, userInput: "" }, "page-1");
+  expect(c.dialogs.open()).toBeNull();
+  // A tab that closes takes its question with it, and so does the connection.
+  opening("confirm", "Leave the queue?");
+  cdp.event("Target.detachedFromTarget", { sessionId: "page-1" });
+  expect(c.dialogs.open()).toBeNull();
+  cdp.attach("page-2");
+  opening("prompt", "Your name?", "page-2");
+  expect(c.dialogs.open()).toMatchObject({ kind: "prompt" });
+  cdp.close();
+  expect(c.dialogs.open()).toBeNull();
 });

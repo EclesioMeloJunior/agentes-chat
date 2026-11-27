@@ -14135,6 +14135,7 @@
       "browser_wait": "페이지 대기",
       "browser_wait_for": "페이지 대기",
       "browser_tabs": "탭 전환",
+      "browser_dialog": "페이지 대화상자 응답",
       "browser_close": "브라우저 닫기",
       "browser_upload": "파일 업로드",
       "browser_file_upload": "파일 업로드",
@@ -18680,6 +18681,10 @@
       "label": "브라우저 탭",
       "description": "탭을 나열하고, 열고, 전환하거나 닫아요."
     },
+    "browser_dialog": {
+      "label": "페이지 대화상자 응답",
+      "description": "페이지가 연 확인 또는 입력 대화상자에 확인이나 취소로 응답해요."
+    },
     "browser_read": {
       "label": "페이지 읽기",
       "description": "버튼, 필드, 링크마다 번호를 붙여 페이지를 텍스트로 읽어요."
@@ -19062,6 +19067,7 @@
         "browser_open_plain": "페이지 열기",
         "browser_back": "이전 페이지로 돌아갔어요",
         "browser_tabs": "탭을 바꿨어요",
+        "browser_dialog": "페이지 대화상자에 응답했어요",
         "browser_read": "페이지를 읽었어요",
         "browser_click": "클릭했어요",
         "browser_fill": "필드를 작성했어요",
