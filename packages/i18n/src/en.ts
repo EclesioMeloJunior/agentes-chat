@@ -14224,7 +14224,7 @@ export const en = {
       },
     },
   },
-  /** The workspace's WhatsApp number for agents (ADR 0260), in Settings  ›  Connectors (`WhatsAppPanel`). */
+  /** The workspace's WhatsApp number for agents (ADR 0261), in Settings  ›  Connectors (`WhatsAppPanel`). */
   whatsApp: {
     title: "WhatsApp",
     text: "Link a phone's WhatsApp and the agents you allow can send messages from its number, to people or its groups, each one approved by a person unless the agent never asks, and read what its groups say. It links the way WhatsApp Web does, and WhatsApp's terms apply to that number.",

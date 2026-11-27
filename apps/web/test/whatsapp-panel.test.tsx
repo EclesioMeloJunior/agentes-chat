@@ -10,7 +10,7 @@ import { renderApp, screen, settle } from "./render";
 afterEach(() => cleanup());
 
 /**
- * Settings → Connectors' WhatsApp card (ADR 0260): nothing without the service, the QR to scan once someone links a
+ * Settings → Connectors' WhatsApp card (ADR 0261): nothing without the service, the QR to scan once someone links a
  * phone, then the number with its Unlink. CI's geometry check lays out each of these screens at 1280 and 320.
  */
 const OFF = { available: true, state: "off", qr: null, qrExpiresAt: null, phone: null, reason: null } as const;

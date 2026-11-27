@@ -101,6 +101,6 @@ export interface Adapters {
    * The built-in source is the engine's own. null/absent = only built-in items.
    */
   vaultSources?: VaultSources | null;
-  /** WhatsApp for agents (ADR 0260): the `whatsapp` service with `WHATSAPP_URL`; null/absent = no WhatsApp. */
+  /** WhatsApp for agents (ADR 0261): the `whatsapp` service with `WHATSAPP_URL`; null/absent = no WhatsApp. */
   whatsapp?: WhatsAppGateway | null;
 }

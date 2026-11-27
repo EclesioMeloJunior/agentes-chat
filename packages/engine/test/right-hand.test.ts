@@ -139,7 +139,7 @@ test("it holds every built-in scope an agent can be given, a computer's as rows 
   expect(toolAccess(keys, { name: "send_dm", scope: "" })).toBe("denied");
   // Its computer's scopes are rows it is made with, so an admin takes one away like any agent's.
   for (const scope of RIGHT_HAND_COMPUTER_GRANTS) expect(keys.has(grantKey(null, scope))).toBe(true);
-  // The workspace's WhatsApp number is no part of it: an admin gives it like any agent's (ADR 0260).
+  // The workspace's WhatsApp number is no part of it: an admin gives it like any agent's (ADR 0261).
   expect(keys.has(grantKey(null, "whatsapp:send"))).toBe(false);
   expect(keys.has(grantKey(null, "whatsapp:read"))).toBe(false);
   await f.db

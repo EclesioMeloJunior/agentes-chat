@@ -3,7 +3,7 @@
   "private": true,
   "type": "module",
   "license": "AGPL-3.0-only",
-  "description": "WhatsApp for agentes.chat's agents (ADR 0260): an HTTP service over zapo-js, one session per workspace.",
+  "description": "WhatsApp for agentes.chat's agents (ADR 0261): an HTTP service over zapo-js, one session per workspace.",
   "engines": {
     "node": ">=24"
   },

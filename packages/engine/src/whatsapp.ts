@@ -1,7 +1,7 @@
 /**
- * WhatsApp for agents (ADR 0260): the workspace's linked phone, as whoever manages connectors sees and links it;
+ * WhatsApp for agents (ADR 0261): the workspace's linked phone, as whoever manages connectors sees and links it;
  * `send_whatsapp`, the tool of the `whatsapp:send` scope, to a number or to a group the phone is in; and
- * `read_whatsapp`, the tool of `whatsapp:read`, which lists those groups and reads what one said lately (ADR 0260
+ * `read_whatsapp`, the tool of `whatsapp:read`, which lists those groups and reads what one said lately (ADR 0261
  * addendum of 2026-11-27). The service behind `WhatsAppGateway` keeps the session and a short window of the groups'
  * messages in memory; nothing here is stored but the audit log.
  */
@@ -196,7 +196,7 @@ const SEND_DESCRIPTION = [
 
 const hasImage = (input: Record<string, unknown>) => typeof input.image === "string" && input.image.trim() !== "";
 
-/** The picture of a send (ADR 0260, pictures): a Drive file the run's agent reads, a JPEG or PNG up to 5 MB. */
+/** The picture of a send (ADR 0261, pictures): a Drive file the run's agent reads, a JPEG or PNG up to 5 MB. */
 async function pictureFor(
   artifacts: ArtifactDeps | undefined,
   ctx: ToolContext,

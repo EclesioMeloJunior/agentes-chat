@@ -1,5 +1,5 @@
 /**
- * The WhatsApp sidecar's HTTP side (ADR 0260): a few routes over `Sessions`, one WhatsApp session per workspace, named
+ * The WhatsApp sidecar's HTTP side (ADR 0261): a few routes over `Sessions`, one WhatsApp session per workspace, named
  * by the workspace's id. Only the app calls it, with `WHATSAPP_API_KEY` as a bearer token when one is set; it answers
  * JSON and never logs a message's words, a phone number or a group's name.
  */
@@ -50,7 +50,7 @@ export interface Sessions {
   logout(id: string): Promise<void>;
 }
 
-/** A picture to send, the words beside it as its caption (ADR 0260, pictures). */
+/** A picture to send, the words beside it as its caption (ADR 0261, pictures). */
 export interface Picture {
   bytes: Uint8Array;
   mimetype: "image/jpeg" | "image/png";

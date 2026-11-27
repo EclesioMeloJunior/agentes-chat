@@ -293,7 +293,7 @@ export interface FakeState {
    * installable. `uninstallRefused`: GitHub doesn't confirm a removal's uninstall.
    */
   githubApp?: GitHubAppInfo & { uninstallRefused?: boolean };
-  /** The workspace's WhatsApp number (ADR 0260); unset = the server has no WhatsApp service. */
+  /** The workspace's WhatsApp number (ADR 0261); unset = the server has no WhatsApp service. */
   whatsApp?: WhatsAppStatus;
   githubAccess?: { orgs: string[] | null; manageUrl: string | null };
   /** The workspace's Composio calls this month (default: none counted, no cap). */

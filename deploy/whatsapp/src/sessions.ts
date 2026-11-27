@@ -1,5 +1,5 @@
 /**
- * WhatsApp sessions on zapo-js (ADR 0260): one `WaClient` per workspace, its keys in one SQLite file on the service's
+ * WhatsApp sessions on zapo-js (ADR 0261): one `WaClient` per workspace, its keys in one SQLite file on the service's
  * volume. A session that paired is kept in `sessions.json` and resumed when the service starts; one that closes on its
  * own is reconnected with a growing pause; one unlinked from the phone forgets its keys and goes back to `off`. What
  * its groups say is kept in memory only, a short window per group (`inbox.ts`); private chats are never kept.

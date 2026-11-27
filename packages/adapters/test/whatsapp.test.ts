@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test";
 import { createHttpWhatsApp, readGroupRead, readGroups, WhatsAppError } from "../src/whatsapp";
 
-// The WhatsApp service's groups and reads (ADR 0260 addendum of 2026-11-27): kept to their shapes, and the calls the
+// The WhatsApp service's groups and reads (ADR 0261 addendum of 2026-11-27): kept to their shapes, and the calls the
 // server makes for them.
 
 const G = "120363025246125486@g.us";

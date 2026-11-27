@@ -1,4 +1,4 @@
-# The `whatsapp` service of docker-compose.yml (ADR 0260): src/main.ts on Node, which runs TypeScript as it is.
+# The `whatsapp` service of docker-compose.yml (ADR 0261): src/main.ts on Node, which runs TypeScript as it is.
 # better-sqlite3 is built (or its prebuilt binary fetched) in the first stage; the second has no compiler.
 FROM node:24-bookworm-slim AS deps
 RUN apt-get update \

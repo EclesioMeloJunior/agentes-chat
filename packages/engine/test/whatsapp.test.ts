@@ -25,7 +25,7 @@ import {
 } from "../src";
 import { addMember, type Fixture, setup } from "./fixtures";
 
-// WhatsApp for agents (ADR 0260): the workspace's linked number as who manages connectors sees it,
+// WhatsApp for agents (ADR 0261): the workspace's linked number as who manages connectors sees it,
 // `send_whatsapp`, granted on its own and approved by a person before a message leaves, to a number or a group, and
 // `read_whatsapp`, which lists the phone's groups and reads one (addendum of 2026-11-27).
 

@@ -8497,7 +8497,7 @@ export interface MailPreset {
 }
 
 /**
- * `GET …/whatsapp` (ADR 0260): the workspace's WhatsApp number, for who manages connectors. `available` false: this
+ * `GET …/whatsapp` (ADR 0261): the workspace's WhatsApp number, for who manages connectors. `available` false: this
  * server has no WhatsApp service.
  */
 export interface WhatsAppStatus {

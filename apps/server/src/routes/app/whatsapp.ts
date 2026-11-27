@@ -31,7 +31,7 @@ const tooMany = { 429: errorResponse("Too many tries (`rate_limited`)") };
 const CONNECTS = { limit: 10, windowMs: 60_000 };
 
 /**
- * The workspace's WhatsApp number (ADR 0260), for whoever manages connectors: whether it is linked, the QR to link it,
+ * The workspace's WhatsApp number (ADR 0261), for whoever manages connectors: whether it is linked, the QR to link it,
  * and the logout. The QR never leaves this route but to that person.
  */
 export function whatsAppRoutes(deps: AppDeps) {

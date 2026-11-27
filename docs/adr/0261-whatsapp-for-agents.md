@@ -1,4 +1,4 @@
-# 0260. WhatsApp for agents
+# 0261. WhatsApp for agents
 
 - Status: Accepted
 - Date: 2026-11-27
