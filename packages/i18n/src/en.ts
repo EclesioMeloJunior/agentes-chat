@@ -15074,6 +15074,7 @@ export const en = {
       browser_wait: "Wait for the page",
       browser_wait_for: "Wait for the page",
       browser_tabs: "Switch tabs",
+      browser_dialog: "Answer page dialog",
       browser_close: "Close the browser",
       browser_upload: "Upload file",
       browser_file_upload: "Upload file",
@@ -19967,6 +19968,10 @@ export const en = {
       label: "Browser tabs",
       description: "Lists, opens, switches or closes tabs.",
     },
+    browser_dialog: {
+      label: "Answer a page's box",
+      description: "Answers a confirm or prompt box a page opened: OK or Cancel.",
+    },
     browser_read: {
       label: "Read the page",
       description: "Reads the page as text, with a number for each button, field and link.",
@@ -20357,6 +20362,7 @@ export const en = {
         browser_open_plain: "Opened a page",
         browser_back: "Went back a page",
         browser_tabs: "Changed tabs",
+        browser_dialog: "Answered a page's box",
         browser_read: "Read the page",
         browser_click: "Clicked",
         browser_fill: "Filled in a field",

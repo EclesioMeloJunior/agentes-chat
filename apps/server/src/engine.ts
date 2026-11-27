@@ -111,6 +111,7 @@ import {
   isRightHand,
   type JobDeps,
   type Judge,
+  type JudgeReach,
   type LiveDeps,
   type MailDeps,
   type McpConnect,
@@ -279,11 +280,15 @@ export function buildEngine(o: EngineOptions) {
   const smallModels = { anthropic: config.ROUTER_MODEL, openai: config.OPENAI_CHEAP_MODEL };
   // Semantic judgments (stop requests, hand-offs, permission changes): Jev while the installation has its key,
   // with the org's small model as fallback (also past a workspace's platform AI for the month, ADR 0079).
+  // What judges for a workspace now (ADR 0054): the screen's tools word themselves by it. With a fake judge
+  // (tests) they keep their own default.
+  let judgeReach: ((orgId: string) => Promise<JudgeReach>) | undefined;
   if (!context.judge) {
     const llmJudge = createLlmJudge({
       gateway,
       resolveModel: (orgId) => smallModelFor({ db, gateway }, orgId, smallModels),
     });
+    judgeReach = async (orgId) => (jevKey.usable() ? "calibrated" : (await llmJudge.answers(orgId)) ? "model" : "none");
     context.judge = withJudgeFallback(
       platformCapJudge(
         db,
@@ -437,6 +442,7 @@ export function buildEngine(o: EngineOptions) {
     machines: { hub: machineHub },
     pubsub: adapters.pubsub,
     judge: context.judge,
+    judgeReach,
     vision,
     publicUrl: config.PUBLIC_URL,
     errors: o.errors,
@@ -606,6 +612,7 @@ export function buildEngine(o: EngineOptions) {
         machines: { hub: machineHub },
         pubsub: adapters.pubsub,
         judge: context.judge,
+        judgeReach,
         vision,
         publicUrl: config.PUBLIC_URL,
       }),

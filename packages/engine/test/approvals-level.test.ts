@@ -183,7 +183,7 @@ describe("the policy, by level", () => {
 
   test("always: a click or typing in the browser asks, looking at a page doesn't", () => {
     const browser = (name: string) => ours(name, "browser:use");
-    const acts = ["browser_do", "browser_click", "browser_fill", "browser_press", "browser_upload"];
+    const acts = ["browser_do", "browser_click", "browser_fill", "browser_press", "browser_upload", "browser_dialog"];
     const looks = ["browser_open", "browser_read", "browser_screenshot", "browser_scroll", "browser_tabs"];
     for (const authority of [person, routine]) {
       expect(acts.filter((name) => action(authority, browser(name), "always") === "approve")).toEqual(acts);

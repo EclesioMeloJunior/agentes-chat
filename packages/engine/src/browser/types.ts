@@ -16,6 +16,7 @@ export const BROWSER_TOOLS = [
   "browser_open",
   "browser_back",
   "browser_tabs",
+  "browser_dialog",
   "browser_read",
   "browser_click",
   "browser_fill",
@@ -44,6 +45,10 @@ export const BROWSER_TOOL_INFO: Record<BrowserToolName, { label: string; descrip
   browser_open: { label: "Open a page", description: "Opens a website in the agent's own browser." },
   browser_back: { label: "Go back", description: "Goes back to the previous page." },
   browser_tabs: { label: "Browser tabs", description: "Lists, opens, switches or closes tabs." },
+  browser_dialog: {
+    label: "Answer a page's box",
+    description: "Answers a confirm or prompt box a page opened: OK or Cancel.",
+  },
   browser_read: {
     label: "Read the page",
     description: "Reads the page as text, with a number for each button, field and link.",

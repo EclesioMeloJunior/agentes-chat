@@ -12,6 +12,7 @@ import {
   finishHandoff,
   grantScopes,
   type Judge,
+  type JudgeReach,
   type MachineCaller,
   MachineOfflineError,
   MachineRequestError,
@@ -40,7 +41,7 @@ afterEach(async () => {
 
 const TOOLS = ["desktop_do", "desktop_read", "desktop_screenshot"];
 
-async function desktopSetup(options: { judge?: Judge } = {}) {
+async function desktopSetup(options: { judge?: Judge; judgeReach?: () => JudgeReach } = {}) {
   const holder: { hub?: MachineCaller } = {};
   const source = createDesktopToolSource({
     machines: {
@@ -51,6 +52,7 @@ async function desktopSetup(options: { judge?: Judge } = {}) {
       },
     },
     ...(options.judge ? { judge: options.judge } : {}),
+    ...(options.judgeReach ? { judgeReach: options.judgeReach } : {}),
     publicUrl: "http://localhost:3000",
   });
   f = await setup({ toolSources: [source] });
@@ -245,6 +247,29 @@ describe("open", () => {
     expect(out.content).toContain('there is no app called "Photoshop" here');
     expect(acts(sent())).toEqual([]);
   });
+});
+
+test("with no model to judge: a find gives the lines with its words, and the tools say what a target may be", async () => {
+  let reach: JudgeReach = "none";
+  const judge: Judge = { name: "none", ask: () => Promise.reject(new Error("no prepaid credit left at the provider")) };
+  const d = await desktopSetup({ judge, judgeReach: () => reach });
+  await d.grant(DESKTOP_SCOPE, SANDBOX_SCOPE);
+  const found = await d.call("desktop_read", { find: "the Documents folder" });
+  expect(found.isError).toBeUndefined();
+  expect(found.content).toContain('No model picks the lines that answer "the Documents folder" on this server');
+  expect(found.content).toContain('- listitem "Documents" [ref=e32]');
+  const whole = await d.call("desktop_read", { find: "zzzz" });
+  expect(whole.content).toContain('No line of the screen has the words of "zzzz"');
+  expect(whole.content).toContain('- listitem "Documents" [ref=e32]');
+
+  const plan = async () => (await d.listed()).find((t) => t.name === "desktop_do")?.description ?? "";
+  expect(await plan()).toContain("by its name exactly as the screen writes it");
+  expect(await plan()).toContain("Nothing weighs a condition in words on this server");
+  reach = "model";
+  expect(await plan()).toContain("by its name exactly as the screen writes it");
+  expect(await plan()).not.toContain("Nothing weighs a condition in words");
+  reach = "calibrated";
+  expect(await plan()).toContain("name each target in words");
 });
 
 test("desktop_read: the screen as untrusted text; desktop_screenshot: a JPEG written into the agent's folder", async () => {

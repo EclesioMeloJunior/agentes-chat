@@ -1470,6 +1470,41 @@ export function browserTabsOf(v: unknown): BrowserTabs | undefined {
   return { count: Math.max(open.length, v.count as number), open, ...(closed.length > 0 ? { closed } : {}) };
 }
 
+/**
+ * A page's own dialog the runner closed by itself since the agent last heard (ADR 0040 §21): an
+ * `alert`, accepted because it has one button, or with `expired` a `confirm` or `prompt` that got no answer in time
+ * and was dismissed. The message is the page's own words.
+ */
+export interface BrowserDialogNote {
+  kind: "alert" | "confirm" | "prompt";
+  message: string;
+  host: string;
+  expired?: true;
+}
+/** What a command answers in `code` while a page's `confirm` or `prompt` waits for the agent's answer. */
+export const PAGE_DIALOG_CODE = "page_dialog";
+
+/** A reply's `dialogs`, checked: empty when there is none or it isn't a list of them. */
+export function browserDialogNotesOf(v: unknown): BrowserDialogNote[] {
+  if (!Array.isArray(v)) return [];
+  const text = (x: unknown, max: number) => (typeof x === "string" ? x.slice(0, max) : "");
+  return v
+    .slice(0, 5)
+    .filter(isObject)
+    .flatMap((d): BrowserDialogNote[] =>
+      d.kind === "alert" || d.kind === "confirm" || d.kind === "prompt"
+        ? [
+            {
+              kind: d.kind,
+              message: text(d.message, 500),
+              host: text(d.host, 255),
+              ...(d.expired === true ? { expired: true as const } : {}),
+            },
+          ]
+        : [],
+    );
+}
+
 /** Where people get Google Chrome, which agents' browsers run on (ADR 0133). */
 export const CHROME_DOWNLOAD_URL = "https://www.google.com/chrome/";
 
@@ -3187,6 +3222,8 @@ export interface MachineReplies {
     /** Protocol 52: the page size its browser emulates (`agentes:viewport`) after the command; absent at its own. */
     emulated?: NonNullable<BrowserViewport>;
     tabs?: BrowserTabs;
+    /** The page dialogs the runner closed by itself since the agent last heard; absent when none, and on a runner that doesn't answer them. */
+    dialogs?: BrowserDialogNote[];
   };
   /** `false`: there was no session. */
   "browser.stop": { stopped: boolean };
@@ -3205,6 +3242,8 @@ export interface MachineReplies {
     /** As `browser.act`'s, after the batch. */
     emulated?: NonNullable<BrowserViewport>;
     tabs?: BrowserTabs;
+    /** As `browser.act`'s. */
+    dialogs?: BrowserDialogNote[];
   };
   /** `false`: nothing was started (it runs or starts already, a person has the browser, or no room). */
   "browser.warm": { started: boolean; setup?: BrowserSetup };

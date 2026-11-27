@@ -1,4 +1,4 @@
-import { modelInfo } from "@agenteschat/providers";
+import { modelInfo, ProviderError, providerCause } from "@agenteschat/providers";
 import { caches } from "./cache";
 import { isConfidentialRun } from "./confidential";
 import { sha256 } from "./crypto";
@@ -93,6 +93,13 @@ export interface Judge {
   name: string;
   ask(request: JudgeRequest): Promise<Record<string, JudgeAnswer>>;
 }
+
+/**
+ * What answers a workspace's judgments now: `calibrated` Jev, whose probabilities a caller may act on; `model` only
+ * its small model, which answers every question but a calibrated one and an image; `none` nothing, and each caller
+ * does what it does without an answer. The screen's tools word themselves by it (ADR 0054).
+ */
+export type JudgeReach = "calibrated" | "model" | "none";
 
 /** The model call a judge made, as an error report tags it (`judgeCallOf`). */
 export interface JudgeCallTags {
@@ -352,6 +359,13 @@ const LLM_SYSTEM =
 export const LLM_JUDGE_TIMEOUT_MS = 12_000;
 
 /**
+ * How long the small model is left alone after its provider said the key has no credit or isn't valid: until then a
+ * judgment fails at once, without the round trip, and its caller does what it does without an answer. Shorter than
+ * Jev's own skip: this is a workspace's key, topped up or replaced by its people at any time.
+ */
+export const SMALL_MODEL_SKIP_MS = 10 * 60_000;
+
+/**
  * The org's small model through the Model Gateway (usage kind `router`), with structured output and the least
  * thinking it allows, so it answers within its callers' short waits. No plan ever answers: the questions come
  * from the system, not from one person.
@@ -361,15 +375,33 @@ export function createLlmJudge(deps: {
   /** The organization's small model (`smallModelFor`); null: none, the question fails. */
   resolveModel(orgId: string): Promise<string | null>;
   timeoutMs?: number;
-}): Judge {
+  now?: () => number;
+}): Judge & {
+  /**
+   * Whether a small model answers for the workspace now: it has one, and its key wasn't refused the last time it
+   * was asked. A refused key reads as no until an answer comes from it again, not only while it is left alone, so
+   * what words itself by this doesn't change every few minutes.
+   */
+  answers(orgId: string): Promise<boolean>;
+} {
+  const now = deps.now ?? Date.now;
+  /** By workspace and model: when a key that had no credit or wasn't valid is asked again. Kept until it answers. */
+  const refused = new Map<string, number>();
+  const skipping = (orgId: string, model: string) => now() < (refused.get(`${orgId}:${model}`) ?? 0);
   return {
     name: "llm",
+    async answers(orgId) {
+      const model = await deps.resolveModel(orgId).catch(() => null);
+      return model !== null && !refused.has(`${orgId}:${model}`);
+    },
     async ask(request) {
       refuseConfidential(request);
       if (request.calibrated) throw new Error("judge: a calibrated judge is required (no Jev)");
       if (judgeSeesImages(request)) throw new Error("judge: images and boxes need Jev");
       const model = await deps.resolveModel(request.orgId);
       if (!model) throw new Error("judge: no small model on this workspace's keys");
+      // No model was called: a fallback's caller reads this as "no small model" (`withJudgeFallback`).
+      if (skipping(request.orgId, model)) throw new Error("judge: the small model's key has no credit or isn't valid");
       const ids = Object.keys(request.questions);
       const properties: Record<string, unknown> = {};
       for (const [id, q] of Object.entries(request.questions)) {
@@ -403,8 +435,13 @@ export function createLlmJudge(deps: {
           outputSchema,
         })
         .catch((error: unknown) => {
+          const cause = error instanceof ProviderError ? providerCause(error) : null;
+          if (cause === "no_credit" || cause === "invalid_key") {
+            refused.set(`${request.orgId}:${model}`, now() + SMALL_MODEL_SKIP_MS);
+          }
           throw withJudgeCall(error, model, provider);
         });
+      refused.delete(`${request.orgId}:${model}`);
       const { usage } = result;
       request.onUsage?.({
         inputTokens: usage.inputTokens + usage.cacheReadTokens + usage.cacheWriteTokens,

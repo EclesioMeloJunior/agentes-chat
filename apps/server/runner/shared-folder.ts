@@ -82,6 +82,22 @@ export function withSharedBin(pathVar: string | undefined, shared: string | null
   return parts.includes(bin) ? pathVar : [...parts, bin].join(path.delimiter);
 }
 
+/**
+ * `withSharedBin` on `env` in place, under the PATH key it already has. A copy of Windows' env keeps the name as the
+ * parent wrote it (`Path` under Task Scheduler), so `env.PATH` there was undefined: the PATH became the shared `bin`
+ * alone, and Claude Code, no longer found, went to cmd.exe by its bare name ("not recognized as ... operable program
+ * or batch file").
+ */
+export function addSharedBin(
+  env: NodeJS.ProcessEnv,
+  shared: string | null | undefined,
+  platform: NodeJS.Platform = process.platform,
+): void {
+  const key = (platform === "win32" && Object.keys(env).find((k) => k.toUpperCase() === "PATH")) || "PATH";
+  const next = withSharedBin(env[key], shared);
+  if (next) env[key] = next;
+}
+
 /** How often what agents brought into system mode's folder is handed to the group (`shareAgentFiles`). */
 export const SHARED_FIX_MS = 60_000;
 

@@ -15132,6 +15132,7 @@
       "browser_wait": "Esperar la página",
       "browser_wait_for": "Esperar la página",
       "browser_tabs": "Cambiar de pestaña",
+      "browser_dialog": "Responder diálogo de la página",
       "browser_close": "Cerrar el navegador",
       "browser_upload": "Subir archivo",
       "browser_file_upload": "Subir archivo",
@@ -19841,6 +19842,10 @@
       "label": "Pestañas del navegador",
       "description": "Lista, abre, cambia o cierra pestañas."
     },
+    "browser_dialog": {
+      "label": "Responder diálogo de la página",
+      "description": "Responde a un cuadro de confirmación o de texto que abrió la página: Aceptar o Cancelar."
+    },
     "browser_read": {
       "label": "Leer la página",
       "description": "Lee la página como texto, con un número para cada botón, campo y enlace."
@@ -20231,6 +20236,7 @@
         "browser_open_plain": "Abrió una página",
         "browser_back": "Volvió una página",
         "browser_tabs": "Cambió de pestaña",
+        "browser_dialog": "Respondió a un diálogo de la página",
         "browser_read": "Leyó la página",
         "browser_click": "Hizo clic",
         "browser_fill": "Completó un campo",

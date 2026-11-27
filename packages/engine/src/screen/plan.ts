@@ -223,8 +223,8 @@ export interface StepReport {
   via?: "ref" | "exact" | "cache" | "judge" | "image";
   /** Another element closed first (a banner in the way). */
   dismissed?: string;
-  /** The step's `expect`, as checked. */
-  expected?: { met: boolean | null; p: number };
+  /** The step's `expect`, as checked (`unjudged`: by its words alone, no model weighed it). */
+  expected?: { met: boolean | null; p: number; unjudged?: true };
   /** Its action went through (a failed step with this only failed its `expect`: it must not be done again). */
   ran?: boolean;
   /** What a `type_secret` typed, by name (the site a Vault login was typed for, ADR 0144): never a value. */
@@ -237,6 +237,8 @@ export interface StepReport {
     text: string;
     answered: "yes" | "partly" | "no";
     searched?: { lines: number; of: number };
+    /** No model picked the lines: they are the ones with the question's words, or the page when none has any. */
+    unjudged?: true;
   };
   ms: number;
 }
@@ -464,6 +466,7 @@ export async function runPlan(deps: PlanDeps, steps: ScreenStep[]): Promise<Plan
       text: found.text,
       answered: found.answered,
       ...(found.searched ? { searched: found.searched } : {}),
+      ...(found.unjudged ? { unjudged: true as const } : {}),
     };
   }
 
@@ -479,6 +482,8 @@ export async function runPlan(deps: PlanDeps, steps: ScreenStep[]): Promise<Plan
     const deadline = now() + ms;
     let checked: string | null = null;
     let failures = 0;
+    // No model weighed the condition: it was looked for as words, and the wait says so when it ends.
+    let unjudged = false;
     for (;;) {
       if (deps.signal?.aborted) throw new Stop("stopped");
       try {
@@ -496,8 +501,9 @@ export async function runPlan(deps: PlanDeps, steps: ScreenStep[]): Promise<Plan
             current,
           );
           checked = digest;
+          unjudged = r.unjudged === true;
           if (r.met === true) {
-            report.note = `"${until}" is true`;
+            report.note = unjudged ? `"${until}" showed` : `"${until}" is true`;
             return;
           }
         }
@@ -506,7 +512,14 @@ export async function runPlan(deps: PlanDeps, steps: ScreenStep[]): Promise<Plan
         // A look or a judgment that failed once (a page loading, a slow answer) isn't the end of the wait.
         if (++failures >= WAIT_FAILURES) throw error;
       }
-      if (now() + POLL_MS > deadline) throw new Stop(`waited ${Math.round(ms / 1000)} s and it didn't happen`);
+      if (now() + POLL_MS > deadline) {
+        const waited = `waited ${Math.round(ms / 1000)} s`;
+        throw new Stop(
+          unjudged
+            ? `${waited} and the ${noun} never showed "${until}" in those words. Nothing weighs a condition in words here: wait for the exact \`text\` the ${noun} will show, or read the ${noun}`
+            : `${waited} and it didn't happen`,
+        );
+      }
       await deps.surface.perform({ kind: "pause", ms: POLL_MS }, { settle: false });
     }
   }
@@ -746,12 +759,14 @@ export async function runPlan(deps: PlanDeps, steps: ScreenStep[]): Promise<Plan
           }
         }
         check = await onImage(check, condition, after, diffObservations(prior, after));
-        report.expected = check;
+        report.expected = { met: check.met, p: check.p, ...(check.unjudged ? { unjudged: true as const } : {}) };
         if (check.met !== true) {
           throw new Stop(
             check.met === false
               ? `the ${noun} doesn't show "${condition}"`
-              : `couldn't confirm "${condition}" on the ${noun}`,
+              : check.unjudged
+                ? `couldn't confirm "${condition}": the ${noun} doesn't show those words, and nothing weighs a condition in words here. The step ran: read the ${noun} to see what it did`
+                : `couldn't confirm "${condition}" on the ${noun}`,
           );
         }
       }

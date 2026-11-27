@@ -15207,6 +15207,7 @@
       "browser_wait": "Attendre le chargement de la page",
       "browser_wait_for": "Attendre le chargement de la page",
       "browser_tabs": "Changer d'onglet",
+      "browser_dialog": "Répondre à une boîte de dialogue",
       "browser_close": "Fermer le navigateur",
       "browser_upload": "Importer un fichier",
       "browser_file_upload": "Importer un fichier",
@@ -19928,6 +19929,10 @@
       "label": "Onglets du navigateur",
       "description": "Liste, ouvre, change ou ferme des onglets."
     },
+    "browser_dialog": {
+      "label": "Répondre à une boîte de dialogue",
+      "description": "Répond à une boîte de confirmation ou de saisie ouverte par la page : OK ou Annuler."
+    },
     "browser_read": {
       "label": "Lire la page",
       "description": "Lit la page sous forme de texte, avec un numéro pour chaque bouton, champ et lien."
@@ -20365,6 +20370,7 @@
         "browser_open_plain": "A ouvert une page",
         "browser_back": "Est revenu à la page précédente",
         "browser_tabs": "A changé d'onglet",
+        "browser_dialog": "A répondu à une boîte de dialogue",
         "browser_read": "A lu la page",
         "browser_click": "A cliqué",
         "browser_fill": "A rempli un champ",
