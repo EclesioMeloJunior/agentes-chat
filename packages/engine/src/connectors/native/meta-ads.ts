@@ -77,6 +77,48 @@ const objectId = (v: unknown) => {
   return raw;
 };
 
+/**
+ * What an insights row holds. `clicks` and `ctr` count every click on the ad (a like, the photo opened, the profile),
+ * so the link's own clicks, their CTR and cost come apart, with frequency, which says when an ad tires its audience.
+ */
+const INSIGHT_FIELDS = [
+  "spend,impressions,reach,frequency,cpm",
+  "clicks,ctr,cpc,inline_link_clicks,inline_link_click_ctr,cost_per_inline_link_click,outbound_clicks",
+  "actions,cost_per_action_type",
+  "campaign_name,adset_name,ad_name,date_start,date_stop",
+].join(",");
+/** A row per day of a month for a few ads fits; past it `more` says to narrow the read. */
+const INSIGHT_ROWS = 100;
+/** Our names for Meta's breakdowns: who saw it (age, gender) and where (the app, then its place in it). */
+const BREAKDOWNS: Record<string, string> = {
+  age: "age",
+  gender: "gender",
+  platform: "publisher_platform",
+  placement: "publisher_platform,platform_position",
+};
+const DAY_PATTERN = "^[0-9]{4}-[0-9]{2}-[0-9]{2}$";
+
+/** A calendar day as Meta takes it, refused when it isn't one (2026-02-30). */
+const day = (v: unknown, name: string) => {
+  const raw = str(v);
+  const at = new Date(`${raw}T00:00:00Z`);
+  if (!new RegExp(DAY_PATTERN).test(raw) || Number.isNaN(at.getTime()) || at.toISOString().slice(0, 10) !== raw)
+    throw new NativeError("connector.refused", `Give ${name} as a day, YYYY-MM-DD.`);
+  return raw;
+};
+
+/** The read's period: since and until together win over date_preset, which defaults to the last 7 days. */
+const period = (input: Record<string, unknown>) => {
+  if (input.since === undefined && input.until === undefined)
+    return { date_preset: str(input.date_preset) || "last_7d" };
+  if (input.since === undefined || input.until === undefined)
+    throw new NativeError("connector.refused", "Give since and until together, or date_preset.");
+  const since = day(input.since, "since");
+  const until = day(input.until, "until");
+  if (since > until) throw new NativeError("connector.refused", "since comes after until.");
+  return { time_range: { since, until } };
+};
+
 const accountInput = { type: "string", description: "The ad account, act_<number> (list_ad_accounts)." } as const;
 const idInput = {
   type: "string",
@@ -138,7 +180,7 @@ const tools: Record<string, NativeTool> = {
   },
   get_insights: {
     description:
-      "Results of an ad account, campaign, ad set or ad: spend, impressions, reach, clicks, CTR, CPC and actions, for a period (date_preset: today, yesterday, last_7d, last_30d, this_month, last_month, maximum).",
+      "Results of an ad account, campaign, ad set or ad for a period (date_preset, or since and until): spend, impressions, reach, frequency, CPM, link clicks (inline_link_clicks, their CTR and cost; clicks and ctr count every click, a like or a photo opened too), outbound clicks, actions and the cost of each. daily gives a row per day; breakdown splits by age, gender or placement. Answers { rows, more }: more means rows were left out, so narrow the period, the level or the breakdown.",
     input: {
       properties: {
         id: { type: "string", description: "act_<number>, or a campaign's, ad set's or ad's id." },
@@ -146,20 +188,26 @@ const tools: Record<string, NativeTool> = {
           type: "string",
           enum: ["today", "yesterday", "last_7d", "last_30d", "this_month", "last_month", "maximum"],
         },
+        since: { type: "string", pattern: DAY_PATTERN, description: "First day, YYYY-MM-DD (with until)." },
+        until: { type: "string", pattern: DAY_PATTERN, description: "Last day, YYYY-MM-DD (with since)." },
         level: { type: "string", enum: ["account", "campaign", "adset", "ad"], description: "Break it down by." },
+        daily: { type: "boolean", description: "One row per day instead of one for the whole period." },
+        breakdown: { type: "string", enum: Object.keys(BREAKDOWNS), description: "Split each row by this." },
       },
       required: ["id"],
     },
     async run(input, call) {
       const id = str(input.id).startsWith("act_") ? account(input.id) : objectId(input.id);
-      const page = await adsCall<{ data?: unknown[] }>(call, "GET", `/${id}/insights`, {
-        fields:
-          "spend,impressions,reach,clicks,ctr,cpc,cpm,actions,campaign_name,adset_name,ad_name,date_start,date_stop",
-        date_preset: str(input.date_preset) || "last_7d",
+      const breakdown = BREAKDOWNS[str(input.breakdown)];
+      const page = await adsCall<{ data?: unknown[]; paging?: { next?: string } }>(call, "GET", `/${id}/insights`, {
+        fields: INSIGHT_FIELDS,
+        ...period(input),
         ...(str(input.level) ? { level: str(input.level) } : {}),
-        limit: "50",
+        ...(input.daily === true ? { time_increment: "1" } : {}),
+        ...(breakdown ? { breakdowns: breakdown } : {}),
+        limit: String(INSIGHT_ROWS),
       });
-      return json(page.data ?? []);
+      return json({ rows: page.data ?? [], more: Boolean(page.paging?.next) });
     },
   },
   create_campaign: {
